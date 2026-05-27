@@ -184,7 +184,7 @@ def _collect_anchors_for_file(
     standby_anchors = [a for a in anchors if a.kind == "standby"]
     for sb in standby_anchors:
         search_start = max(0.0, sb.end_offset - 0.25)
-        search_end = sb.end_offset + 5.0
+        search_end = sb.end_offset + 10.0
         log.info("  Searching beep around standby at %.2fs, window %.2f-%.2fs",
                  sb.file_offset, search_start, search_end)
 
