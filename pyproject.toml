@@ -16,6 +16,9 @@ dependencies = [
     "typer>=0.9",
 ]
 
+[project.optional-dependencies]
+test = ["pytest>=7.0"]
+
 [project.scripts]
 uspsa-clip-cutter = "video_stage_cutter.cli:app"
 

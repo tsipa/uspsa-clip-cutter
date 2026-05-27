@@ -52,6 +52,7 @@ class ProcessingConfig:
     max_clip_length: float = 600.0
     overwrite: bool = False
     dry_run: bool = False
+    phrase_threshold: float = 70.0
 
 
 # ---------------------------------------------------------------------------
@@ -158,7 +159,7 @@ def _collect_anchors_for_file(
     save_transcript(fi.segments, debug_dir / f"{fi.path.stem}_transcript.json")
 
     # --- phrase detection ---
-    start_matches, end_matches = detect_phrases(fi.segments)
+    start_matches, end_matches = detect_phrases(fi.segments, threshold=config.phrase_threshold)
 
     for m in start_matches:
         kind = "standby" if "stand by" in m.matched_phrase.lower() else "ready"
@@ -179,25 +180,32 @@ def _collect_anchors_for_file(
         log.info("  ANCHOR END_COMMAND: %.2fs '%s' (matched '%s', score=%.0f)",
                  m.start, m.text, m.matched_phrase, m.score)
 
-    # --- beep detection: search after each standby ---
+    # --- beep detection: search around each standby ---
     standby_anchors = [a for a in anchors if a.kind == "standby"]
     for sb in standby_anchors:
-        search_start = sb.end_offset + 1.0
-        search_end = sb.end_offset + 10.0
-        log.info("  Searching beep after standby at %.2fs, window %.2f-%.2fs",
+        search_start = max(0.0, sb.end_offset - 0.25)
+        search_end = sb.end_offset + 5.0
+        log.info("  Searching beep around standby at %.2fs, window %.2f-%.2fs",
                  sb.file_offset, search_start, search_end)
 
         beeps = detect_beeps(fi.wav_path, search_start, search_end)
         if beeps:
-            best = max(beeps, key=lambda b: b.confidence)
+            best = max(beeps, key=lambda b: b.energy)
+            log.info("  All beep candidates:")
+            for bc in beeps:
+                marker = " <-- CHOSEN" if bc is best else ""
+                log.info("    t=%.3fs energy=%.2f confidence=%.3f%s",
+                         bc.timestamp, bc.energy, bc.confidence, marker)
             anchors.append(Anchor(
                 kind="beep", abs_time=epoch + best.timestamp, file_idx=file_idx,
-                file_offset=best.timestamp, text="timer_beep", score=best.confidence * 100,
+                file_offset=best.timestamp,
+                text=f"timer_beep (energy={best.energy:.1f})",
+                score=best.confidence * 100,
             ))
-            log.info("  ANCHOR BEEP: %.3fs (confidence=%.3f, %.2fs after standby end)",
-                     best.timestamp, best.confidence, best.timestamp - sb.end_offset)
+            log.info("  ANCHOR BEEP: %.3fs (energy=%.1f, %.2fs after standby end)",
+                     best.timestamp, best.energy, best.timestamp - sb.end_offset)
         else:
-            log.warning("  No beep found after standby at %.2fs", sb.file_offset)
+            log.warning("  No beep found around standby at %.2fs", sb.file_offset)
 
     # --- gunshot detection: full file ---
     log.info("  Detecting gunshots ...")
