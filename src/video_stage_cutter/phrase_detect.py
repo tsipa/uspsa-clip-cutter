@@ -114,7 +114,21 @@ def detect_phrases(
     start_matches.sort(key=lambda m: m.start)
     end_matches.sort(key=lambda m: m.start)
 
-    log.info("Phrase detection: %d start candidates, %d end candidates", len(start_matches), len(end_matches))
+    for m in start_matches:
+        log.info(
+            "  START candidate: '%.50s' matched '%s' score=%.0f at %.2f–%.2fs",
+            m.text, m.matched_phrase, m.score, m.start, m.end,
+        )
+    for m in end_matches:
+        log.info(
+            "  END   candidate: '%.50s' matched '%s' score=%.0f at %.2f–%.2fs",
+            m.text, m.matched_phrase, m.score, m.start, m.end,
+        )
+    if not start_matches:
+        log.warning("  No start phrases found in transcript")
+    if not end_matches:
+        log.warning("  No end phrases found in transcript")
+
     return start_matches, end_matches
 
 

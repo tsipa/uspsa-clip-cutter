@@ -87,9 +87,17 @@ def detect_beeps(
     candidates.sort(key=lambda c: c.timestamp)
 
     log.info(
-        "Beep detection: %d candidates in window %.2f–%.2f s",
-        len(candidates), search_start, search_end,
+        "Beep detection: searched %.2f–%.2f s, threshold=%.2f (median=%.2f + 3*std=%.2f), found %d candidates",
+        search_start, search_end, threshold, median_energy, std_energy, len(candidates),
     )
+    for c in candidates:
+        log.info(
+            "  BEEP candidate: t=%.3fs energy=%.2f confidence=%.3f",
+            c.timestamp, c.energy, c.confidence,
+        )
+    if not candidates:
+        log.warning("  No beep detected in window %.2f–%.2f s", search_start, search_end)
+
     return candidates
 
 
