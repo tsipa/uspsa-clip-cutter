@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "uspsa-clip-cutter"
+version = "0.1.0"
+description = "Batch-process action camera videos from USPSA matches: detect stage start beep and end command, cut clips automatically."
+requires-python = ">=3.11"
+dependencies = [
+    "faster-whisper>=1.0.0",
+    "numpy>=1.24",
+    "scipy>=1.11",
+    "rapidfuzz>=3.0",
+    "tqdm>=4.65",
+    "typer>=0.9",
+]
+
+[project.scripts]
+uspsa-clip-cutter = "video_stage_cutter.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
