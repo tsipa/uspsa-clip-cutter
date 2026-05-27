@@ -15,7 +15,11 @@ from video_stage_cutter.ffmpeg_utils import (
     get_duration,
 )
 from video_stage_cutter.manifest import ManifestRow
-from video_stage_cutter.metadata import get_creation_time
+from video_stage_cutter.metadata import (
+    filename_sort_key,
+    get_creation_time,
+    get_creation_time_or_mtime,
+)
 from video_stage_cutter.phrase_detect import detect_phrases
 from video_stage_cutter.transcribe import (
     TranscriptSegment,
@@ -115,7 +119,14 @@ def discover_videos(input_dir: Path) -> list[Path]:
         p for p in input_dir.iterdir()
         if p.is_file() and p.suffix.lower() in VIDEO_EXTENSIONS
     ]
-    videos.sort(key=lambda p: get_creation_time(p))
+    # try metadata sort; if any file lacks creation_time, fall back to filename
+    has_metadata = all(get_creation_time(v) is not None for v in videos)
+    if has_metadata:
+        videos.sort(key=lambda p: get_creation_time(p))
+        log.info("Sorted %d videos by creation_time metadata", len(videos))
+    else:
+        videos.sort(key=filename_sort_key)
+        log.info("Some files lack creation_time — sorted %d videos by filename (GoPro-aware)", len(videos))
     return videos
 
 
@@ -577,19 +588,50 @@ def run_batch(
     debug_dir.mkdir(parents=True, exist_ok=True)
 
     # --- build file infos ---
+    # If all files have creation_time metadata, use real epochs.
+    # Otherwise assign synthetic sequential epochs so cross-file
+    # detection still works (file0 starts at 0, file1 at file0.duration, etc).
+    wav_dir = debug_dir / "wav"
+    wav_dir.mkdir(parents=True, exist_ok=True)
+
+    durations = {vp: get_duration(vp) for vp in videos}
+    has_all_metadata = all(get_creation_time(v) is not None for v in videos)
+
     files: list[FileInfo] = []
+    synthetic_epoch = 0.0
+
     for vp in videos:
+        dur = durations[vp]
         creation_dt = get_creation_time(vp)
-        wav_dir = debug_dir / "wav"
-        wav_dir.mkdir(parents=True, exist_ok=True)
+
+        if has_all_metadata and creation_dt is not None:
+            epoch = creation_dt.timestamp()
+            ts_str = creation_dt.strftime("%Y-%m-%d_%H-%M-%S")
+            iso_str = creation_dt.isoformat()
+        else:
+            epoch = synthetic_epoch
+            # use mtime for display name if available, otherwise just index
+            display_dt = get_creation_time_or_mtime(vp)
+            ts_str = display_dt.strftime("%Y-%m-%d_%H-%M-%S")
+            iso_str = display_dt.isoformat()
+
         files.append(FileInfo(
             path=vp,
             wav_path=wav_dir / f"{vp.stem}.wav",
-            duration=get_duration(vp),
-            creation_epoch=creation_dt.timestamp(),
-            creation_str=creation_dt.strftime("%Y-%m-%d_%H-%M-%S"),
-            creation_iso=creation_dt.isoformat(),
+            duration=dur,
+            creation_epoch=epoch,
+            creation_str=ts_str,
+            creation_iso=iso_str,
         ))
+        synthetic_epoch += dur
+
+    if not has_all_metadata:
+        log.info(
+            "Using synthetic timeline (files placed sequentially, total %.1fs)",
+            synthetic_epoch,
+        )
+        for i, fi in enumerate(files):
+            log.info("  [%d] %s: epoch=%.1f duration=%.1fs", i, fi.path.name, fi.creation_epoch, fi.duration)
 
     # --- pass 1: collect all anchors ---
     log.info("PASS 1: Collecting anchors from %d files ...", len(files))

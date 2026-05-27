@@ -1,9 +1,8 @@
 """Tests for metadata module."""
 
-from datetime import datetime, timezone
-from unittest.mock import patch
+from pathlib import Path
 
-from video_stage_cutter.metadata import _extract_creation_time
+from video_stage_cutter.metadata import _extract_creation_time, filename_sort_key
 
 
 class TestExtractCreationTime:
@@ -52,3 +51,54 @@ class TestExtractCreationTime:
         dt = _extract_creation_time(probe)
         assert dt is not None
         assert dt.tzinfo is not None
+
+
+class TestFilenameSortKey:
+    def test_gopro_chapters_sorted_correctly(self) -> None:
+        files = [
+            Path("GX010124.mp4"),
+            Path("GX020123.mp4"),
+            Path("GX010123.mp4"),
+        ]
+        result = sorted(files, key=filename_sort_key)
+        assert [f.name for f in result] == [
+            "GX010123.mp4",  # clip 123, chapter 1
+            "GX020123.mp4",  # clip 123, chapter 2
+            "GX010124.mp4",  # clip 124, chapter 1
+        ]
+
+    def test_gopro_old_naming(self) -> None:
+        files = [
+            Path("GP010001.mp4"),
+            Path("GOPR0001.mp4"),
+            Path("GOPR0002.mp4"),
+        ]
+        result = sorted(files, key=filename_sort_key)
+        assert [f.name for f in result] == [
+            "GOPR0001.mp4",  # clip 1, chapter 0
+            "GP010001.mp4",  # clip 1, chapter 1
+            "GOPR0002.mp4",  # clip 2, chapter 0
+        ]
+
+    def test_non_gopro_lexicographic(self) -> None:
+        files = [
+            Path("DJI_0003.mp4"),
+            Path("DJI_0001.mp4"),
+            Path("DJI_0002.mp4"),
+        ]
+        result = sorted(files, key=filename_sort_key)
+        assert [f.name for f in result] == [
+            "DJI_0001.mp4",
+            "DJI_0002.mp4",
+            "DJI_0003.mp4",
+        ]
+
+    def test_mixed_gopro_and_other(self) -> None:
+        files = [
+            Path("video_003.mp4"),
+            Path("GX010001.mp4"),
+            Path("video_001.mp4"),
+        ]
+        result = sorted(files, key=filename_sort_key)
+        # GoPro files (prefix 0) come before non-GoPro (prefix 1)
+        assert result[0].name == "GX010001.mp4"
