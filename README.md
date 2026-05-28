@@ -228,12 +228,13 @@ In the debug directory (`<output_dir>/debug/` by default, or the path you pass w
 ## How Detection Works
 
 1. **Audio extraction.** ffmpeg extracts a mono 16 kHz WAV from each video.
-2. **Speech recognition.** faster-whisper (a local Whisper implementation) transcribes the audio with word-level timestamps.
-3. **Phrase matching.** Each word sequence in the transcript is compared against known RO commands using fuzzy string matching (rapidfuzz). This handles variations in pronunciation and transcription errors.
-4. **Beep detection.** After finding "stand by", the tool analyzes a short audio window using a spectrogram to find high-frequency energy spikes (the timer beep, typically 2500-5000 Hz).
-5. **Clip boundaries.** The clip starts at the beep (or at the end of "stand by" if no beep is found). The clip ends after "hammer down and holster" (or the longest matching end phrase), plus configurable padding.
-6. **Fallback clips.** If the end command is not found, the tool cuts a 3-minute clip after the detected start and marks it as incomplete. If a start/beep is not found but an end command is, the tool cuts the 3 minutes before the end. These fallback clips are automatically trimmed so they do not overlap any confirmed stage (where both start and end were found). If trimming makes a fallback clip shorter than `--min-clip-length`, it is skipped.
-7. **Gunshot detection.** Loud transient amplitude spikes are detected as gunshots. These are used to validate that shooting actually occurred between the start and end commands.
+2. **Speech recognition.** All files are transcribed with faster-whisper (word-level timestamps). A domain-specific prompt biases the model toward RO commands.
+3. **Global keyword detection.** All transcripts are combined on a single timeline. Individual keywords are found via fuzzy matching (rapidfuzz): "make ready", "are you ready", "stand by", "finished", "unload", "show clear", "hammer down", "holster", "range is clear".
+4. **Sequence matching.** Keywords are grouped into ordered sequences matching the expected RO protocol. Start: make ready -> are you ready -> stand by. End: finished -> unload -> show clear -> hammer down -> holster -> range is clear. Keywords must appear in chronological order; out-of-order keywords are ignored.
+5. **Beep detection.** After finding "stand by", a spectrogram analysis searches for a tonal beep (2500-5000 Hz). Candidates are scored by a composite of energy, tonality, broadband ratio, and duration. Broadband impulses (gunshots) are rejected.
+6. **Confidence scoring.** Each stage gets a base confidence from its best anchor score, then boosted by corroborating evidence: +0.3 for beep, +0.2 for having both start and end, +0.1 for standby, +0.05 per gunshot near boundaries (max +0.2). Stages with effective confidence below 0.4 are dropped. This filters out isolated words like "holster" (0.10) or "ready" (0.10) that appear in casual conversation.
+7. **Fallback clips.** If only start is found: 3-minute clip after start. If only end is found: 3 minutes before end. Fallbacks are trimmed to avoid overlapping confirmed stages. If trimming makes a clip shorter than `--min-clip-length`, it is skipped.
+8. **Gunshot detection.** Amplitude spikes are detected as gunshots. Gunshots near stage boundaries boost confidence, confirming that shooting actually occurred.
 
 ---
 
