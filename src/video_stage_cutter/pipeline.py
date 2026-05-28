@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import json
 import logging
+import multiprocessing
+import os
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
@@ -55,6 +58,7 @@ class ProcessingConfig:
     phrase_threshold: float = 70.0
     beep_search_before: float = 0.25
     beep_search_after: float = 10.0
+    workers: int = 0  # 0 = auto (0.75 * cpu_count)
 
 
 # ---------------------------------------------------------------------------
@@ -737,6 +741,84 @@ def _transcribe(
 
 
 # ---------------------------------------------------------------------------
+# Parallel worker (runs in child process)
+# ---------------------------------------------------------------------------
+
+_worker_whisper_model = None
+
+
+def _worker_init(model_name: str, device: str, compute_type: str) -> None:
+    """Called once per worker process to load the Whisper model."""
+    global _worker_whisper_model
+    from faster_whisper import WhisperModel
+    _worker_whisper_model = WhisperModel(model_name, device=device, compute_type=compute_type)
+
+
+def _worker_process_file(args: dict) -> dict:
+    """Process a single file in a worker process. Returns serializable results."""
+    global _worker_whisper_model
+
+    video_path = Path(args["video_path"])
+    wav_path = Path(args["wav_path"])
+    debug_dir = Path(args["debug_dir"])
+    file_idx = args["file_idx"]
+    epoch = args["epoch"]
+    duration = args["duration"]
+    creation_str = args["creation_str"]
+    creation_iso = args["creation_iso"]
+    phrase_threshold = args["phrase_threshold"]
+    beep_search_before = args["beep_search_before"]
+    beep_search_after = args["beep_search_after"]
+
+    fi = FileInfo(
+        path=video_path,
+        wav_path=wav_path,
+        duration=duration,
+        creation_epoch=epoch,
+        creation_str=creation_str,
+        creation_iso=creation_iso,
+    )
+
+    config = ProcessingConfig(
+        phrase_threshold=phrase_threshold,
+        beep_search_before=beep_search_before,
+        beep_search_after=beep_search_after,
+    )
+
+    try:
+        anchors, _ = _collect_anchors_for_file(
+            fi, file_idx, config, debug_dir, _worker_whisper_model,
+        )
+        return {
+            "file_idx": file_idx,
+            "anchors": [asdict(a) for a in anchors],
+            "beep_searches": [asdict(bs) for bs in fi.beep_searches],
+            "error": None,
+        }
+    except Exception as exc:
+        return {
+            "file_idx": file_idx,
+            "anchors": [],
+            "beep_searches": [],
+            "error": str(exc),
+        }
+
+
+def _resolve_workers(config: ProcessingConfig) -> int:
+    """Return the number of worker processes to use."""
+    if config.workers > 0:
+        n = config.workers
+    else:
+        n = max(1, int((os.cpu_count() or 1) * 0.75))
+
+    if config.device != "cpu" and n > 1:
+        log.warning("GPU mode (device=%s): forcing workers=1 to avoid VRAM contention", config.device)
+        n = 1
+
+    return n
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
@@ -796,18 +878,63 @@ def run_batch(
         for i, fi in enumerate(files):
             log.info("  [%d] %s: epoch=%.1f duration=%.1fs", i, fi.path.name, fi.creation_epoch, fi.duration)
 
-    log.info("PASS 1: Collecting anchors from %d files ...", len(files))
+    num_workers = _resolve_workers(config)
+    log.info("PASS 1: Collecting anchors from %d files (workers=%d) ...", len(files), num_workers)
     all_anchors: list[Anchor] = []
-    whisper_model = None
 
-    for i, fi in enumerate(tqdm(files, desc="Pass 1: collecting anchors")):
-        try:
-            anchors, whisper_model = _collect_anchors_for_file(
-                fi, i, config, debug_dir, whisper_model,
-            )
-            all_anchors.extend(anchors)
-        except Exception as exc:
-            log.error("Failed to process %s: %s", fi.path.name, exc)
+    if num_workers <= 1 or len(files) <= 1:
+        # sequential mode: share one model across files
+        whisper_model = None
+        for i, fi in enumerate(tqdm(files, desc="Pass 1: collecting anchors")):
+            try:
+                anchors, whisper_model = _collect_anchors_for_file(
+                    fi, i, config, debug_dir, whisper_model,
+                )
+                all_anchors.extend(anchors)
+            except Exception as exc:
+                log.error("Failed to process %s: %s", fi.path.name, exc)
+    else:
+        # parallel mode: each worker loads its own model
+        worker_args = [
+            {
+                "video_path": str(fi.path),
+                "wav_path": str(fi.wav_path),
+                "debug_dir": str(debug_dir),
+                "file_idx": i,
+                "epoch": fi.creation_epoch,
+                "duration": fi.duration,
+                "creation_str": fi.creation_str,
+                "creation_iso": fi.creation_iso,
+                "phrase_threshold": config.phrase_threshold,
+                "beep_search_before": config.beep_search_before,
+                "beep_search_after": config.beep_search_after,
+            }
+            for i, fi in enumerate(files)
+        ]
+
+        log.info("Spawning %d worker processes (each loads its own Whisper model) ...", num_workers)
+        ctx = multiprocessing.get_context("spawn")
+        with ProcessPoolExecutor(
+            max_workers=num_workers,
+            mp_context=ctx,
+            initializer=_worker_init,
+            initargs=(config.model, config.device, config.compute_type),
+        ) as executor:
+            for result in tqdm(
+                executor.map(_worker_process_file, worker_args),
+                total=len(worker_args),
+                desc="Pass 1: collecting anchors",
+            ):
+                if result["error"]:
+                    fi = files[result["file_idx"]]
+                    log.error("Failed to process %s: %s", fi.path.name, result["error"])
+                else:
+                    for ad in result["anchors"]:
+                        all_anchors.append(Anchor(**ad))
+                    fi = files[result["file_idx"]]
+                    fi.beep_searches = [
+                        BeepSearchRecord(**bs) for bs in result["beep_searches"]
+                    ]
 
     log.info("PASS 1 COMPLETE: %d anchors total", len(all_anchors))
 
