@@ -243,6 +243,74 @@ class TestAssembleStages:
         assert 150.0 not in stage2_gs_times
 
 
+class TestReadyWithoutStandby:
+    """When there's a ready anchor but no standby, beep search should
+    use the ready anchor with a wider window and not crash."""
+
+    def test_ready_only_produces_stage(self) -> None:
+        """ready + beep + end = confirmed stage, no standby needed."""
+        anchors = [
+            Anchor(kind="ready",       abs_time=100.0, file_idx=0, file_offset=5.0,  text="are you ready", score=90, end_offset=6.0),
+            Anchor(kind="beep",        abs_time=107.0, file_idx=0, file_offset=12.0, text="timer_beep",    score=80),
+            Anchor(kind="end_command", abs_time=130.0, file_idx=0, file_offset=35.0, text="hammer down",   score=85, end_offset=36.0),
+        ]
+        stages = _assemble_stages(anchors)
+        assert len(stages) == 1
+        assert stages[0].complete is True
+        assert stages[0].beep is not None
+
+    def test_ready_only_no_end_produces_fallback(self) -> None:
+        """ready + beep, no end command = fallback stage."""
+        anchors = [
+            Anchor(kind="ready", abs_time=100.0, file_idx=0, file_offset=5.0, text="make ready", score=85, end_offset=6.0),
+            Anchor(kind="beep",  abs_time=150.0, file_idx=0, file_offset=55.0, text="timer_beep", score=80),
+        ]
+        stages = _assemble_stages(anchors)
+        assert len(stages) == 1
+        assert stages[0].complete is False
+        assert "fallback" in stages[0].end_reason
+
+    def test_beep_search_record_has_anchor_kind(self) -> None:
+        """BeepSearchRecord should record anchor_kind='ready' when no standby."""
+        from video_stage_cutter.pipeline import BeepSearchRecord
+        rec = BeepSearchRecord(
+            anchor_offset=5.0,
+            anchor_kind="ready",
+            search_start=4.75,
+            search_end=95.0,
+        )
+        assert rec.anchor_kind == "ready"
+        assert rec.anchor_offset == 5.0
+
+
+class TestBeepSearchClampedAtEnd:
+    """Beep search window should be clamped at the first end_command."""
+
+    def test_beep_before_end_command_found(self) -> None:
+        """If end_command is at 30s, beep at 12s should be found
+        (it's before end_command)."""
+        anchors = [
+            Anchor(kind="standby",     abs_time=100.0, file_idx=0, file_offset=10.0, text="stand by",    score=95, end_offset=11.0),
+            Anchor(kind="beep",        abs_time=102.0, file_idx=0, file_offset=12.0, text="timer_beep",  score=80),
+            Anchor(kind="end_command", abs_time=120.0, file_idx=0, file_offset=30.0, text="hammer down", score=85, end_offset=31.0),
+        ]
+        stages = _assemble_stages(anchors)
+        assert len(stages) == 1
+        assert stages[0].complete is True
+
+    def test_no_beep_after_end_command(self) -> None:
+        """A beep anchor placed AFTER end_command should still form a stage
+        with the end_command (assembly pairs beep with next end_command)."""
+        anchors = [
+            Anchor(kind="standby",     abs_time=100.0, file_idx=0, file_offset=10.0, text="stand by",    score=95, end_offset=11.0),
+            Anchor(kind="beep",        abs_time=102.0, file_idx=0, file_offset=12.0, text="timer_beep",  score=80),
+            Anchor(kind="end_command", abs_time=105.0, file_idx=0, file_offset=15.0, text="range clear",  score=85, end_offset=16.0),
+        ]
+        stages = _assemble_stages(anchors)
+        confirmed = [s for s in stages if s.complete]
+        assert len(confirmed) == 1
+
+
 class TestSubtractIntervals:
     def test_no_overlap(self) -> None:
         result = _subtract_intervals(0, 100, [(200, 300)])

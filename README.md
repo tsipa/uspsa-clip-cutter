@@ -126,7 +126,7 @@ Open `manifest.csv` in Excel or a text editor. Check the `start_offset`, `end_of
 python -m video_stage_cutter run "C:\videos" "C:\clips" --model small --device cpu --compute-type int8
 ```
 
-This uses the `small` Whisper model with int8 quantization. It is the default configuration and works on any machine.
+This uses the `small` Whisper model with int8 quantization. Faster but less accurate than the default `large-v3`.
 
 ## NVIDIA GPU Example
 
@@ -206,21 +206,22 @@ In the debug directory (`<output_dir>/debug/` by default, or the path you pass w
 
 | Option | Default | Description |
 |---|---|---|
-| `--model` | `small` | Whisper model name. Options: `tiny`, `base`, `small`, `medium`, `large-v3`. Larger models are more accurate but slower. |
+| `--model` | `large-v3` | Whisper model name. Options: `tiny`, `base`, `small`, `medium`, `large-v3`. Larger models are more accurate but slower. |
 | `--device` | `cpu` | Device for Whisper inference. Use `cpu` or `cuda` (NVIDIA GPU). |
 | `--compute-type` | `int8` | Numeric precision. `int8` for CPU, `float16` for GPU, `float32` for maximum accuracy. |
 | `--accurate-cut` / `--fast-cut` | `--accurate-cut` | Re-encode for frame-accurate boundaries (slower) or stream-copy (fast, may start on a prior keyframe). |
 | `--keep-wav` | off | Keep the extracted WAV files in the debug directory instead of deleting them after processing. |
 | `--debug-dir` | `<output>/debug` | Custom directory for transcript and detection JSON files. |
-| `--start-padding` | `0.0` | Seconds to include before the detected start (beep). |
-| `--end-padding` | `2.0` | Seconds to include after the detected end command. |
+| `--start-padding` | `10.0` | Seconds to include before the detected start (beep or "are you ready"). |
+| `--end-padding` | `10.0` | Seconds to include after the detected end command. |
 | `--min-clip-length` | `5.0` | Reject clips shorter than this many seconds. |
 | `--max-clip-length` | `600.0` | Reject clips longer than this many seconds. |
 | `--overwrite` | off | Overwrite existing output files. Without this, existing outputs are skipped. |
 | `--dry-run` | off | Run detection and write manifest/debug files, but do not cut any video. |
 | `--phrase-threshold` | `70.0` | Fuzzy matching threshold for phrase detection (0-100). Lower = more lenient, higher = stricter. |
 | `--beep-search-before` | `0.25` | Seconds before "stand by" end to start searching for the timer beep. |
-| `--beep-search-after` | `10.0` | Seconds after "stand by" end to stop searching for the timer beep. |
+| `--beep-search-after` | `10.0` | Seconds after "stand by" end to stop searching for the timer beep. Clamped to first end command if found earlier. |
+| `--workers` | `1` | Number of parallel workers for anchor detection. >1 spawns separate processes. GPU mode forces 1. |
 | `-v` / `--verbose` | off | Enable debug-level logging for detailed output. |
 
 ---
