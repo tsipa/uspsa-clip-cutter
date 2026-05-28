@@ -993,12 +993,14 @@ def _cut_stages(
                     max_clip_length=config.max_clip_length,
                 )
             else:
-                source_paths = [files[fi].path for fi, _, _ in spans]
+                source_paths = [files[si].path for si, _, _ in spans]
                 global_start = spans[0][1]
-                global_end = sum(files[fi].duration for fi, _, _ in spans[:-1]) + spans[-1][2]
+                # concat timeline: full files in order, so offset of last file
+                # = sum of full durations of all preceding files
+                global_end = sum(files[si].duration for si, _, _ in spans[:-1]) + spans[-1][2]
                 log.info(
-                    "  Cross-file cut: %s, combined %.2f-%.2fs",
-                    " + ".join(files[fi].path.name for fi, _, _ in spans),
+                    "  Cross-file cut: %s, global_start=%.2f global_end=%.2f",
+                    " + ".join(files[si].path.name for si, _, _ in spans),
                     global_start, global_end,
                 )
                 concat_and_cut(

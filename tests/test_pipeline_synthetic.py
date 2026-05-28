@@ -523,6 +523,73 @@ class TestFallbackOverlapTrimming:
                 assert fb.clip_start >= 46.0 or fb.clip_end <= 10.0
 
 
+class TestCrossFileCutOffsets:
+    """Verify that cross-file cut calculates correct concat timeline offsets."""
+
+    def test_two_file_span_offsets(self) -> None:
+        """Stage spanning file0 (50-60s local) + file1 (0-10s local).
+        Concat timeline: [file0 full 100s | file1 full 80s].
+        global_start = 50 (local_start in file0)
+        global_end = 100 (file0 duration) + 10 (local_end in file1) = 110
+        """
+        from video_stage_cutter.pipeline import _find_file_spans
+        files = [
+            FileInfo(path=Path("/f0.mp4"), wav_path=Path("/f0.wav"),
+                     duration=100.0, creation_epoch=1000.0,
+                     creation_str="", creation_iso=""),
+            FileInfo(path=Path("/f1.mp4"), wav_path=Path("/f1.wav"),
+                     duration=80.0, creation_epoch=1100.0,
+                     creation_str="", creation_iso=""),
+        ]
+        # abs range: 1050-1110 (file0 @ 50s to file1 @ 10s)
+        spans = _find_file_spans(1050.0, 1110.0, files)
+        assert len(spans) == 2
+        assert spans[0] == (0, 50.0, 100.0)  # file0: local 50-100
+        assert spans[1] == (1, 0.0, 10.0)    # file1: local 0-10
+
+        # verify concat timeline math
+        global_start = spans[0][1]
+        global_end = sum(files[si].duration for si, _, _ in spans[:-1]) + spans[-1][2]
+        assert global_start == 50.0
+        assert global_end == 110.0  # 100 (file0 full) + 10
+
+    def test_three_file_span_offsets(self) -> None:
+        """Stage spanning 3 files — middle file fully included."""
+        from video_stage_cutter.pipeline import _find_file_spans
+        files = [
+            FileInfo(path=Path("/f0.mp4"), wav_path=Path("/f0.wav"),
+                     duration=60.0, creation_epoch=0.0,
+                     creation_str="", creation_iso=""),
+            FileInfo(path=Path("/f1.mp4"), wav_path=Path("/f1.wav"),
+                     duration=60.0, creation_epoch=60.0,
+                     creation_str="", creation_iso=""),
+            FileInfo(path=Path("/f2.mp4"), wav_path=Path("/f2.wav"),
+                     duration=60.0, creation_epoch=120.0,
+                     creation_str="", creation_iso=""),
+        ]
+        # abs range: 50-130 → file0 50-60, file1 0-60 (full), file2 0-10
+        spans = _find_file_spans(50.0, 130.0, files)
+        assert len(spans) == 3
+
+        global_start = spans[0][1]  # 50
+        global_end = sum(files[si].duration for si, _, _ in spans[:-1]) + spans[-1][2]
+        # file0 full (60) + file1 full (60) + file2 local_end (10) = 130
+        assert global_start == 50.0
+        assert global_end == 130.0
+
+    def test_single_file_no_cross(self) -> None:
+        """Single file span — no cross-file logic needed."""
+        from video_stage_cutter.pipeline import _find_file_spans
+        files = [
+            FileInfo(path=Path("/f0.mp4"), wav_path=Path("/f0.wav"),
+                     duration=100.0, creation_epoch=0.0,
+                     creation_str="", creation_iso=""),
+        ]
+        spans = _find_file_spans(20.0, 50.0, files)
+        assert len(spans) == 1
+        assert spans[0] == (0, 20.0, 50.0)
+
+
 class TestPhase1CAudioAnchors:
     """Tests for _collect_audio_anchors_for_file (Phase 1C)."""
 
