@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import sys
 from pathlib import Path
 
 import typer
@@ -38,7 +37,6 @@ def run(
     phrase_threshold: float = typer.Option(70.0, help="Fuzzy matching threshold for phrase detection (0-100). Lower = more lenient."),
     beep_search_before: float = typer.Option(0.25, help="Seconds before standby end to start searching for the beep."),
     beep_search_after: float = typer.Option(10.0, help="Seconds after standby end to stop searching for the beep."),
-    workers: int = typer.Option(1, help="Number of parallel workers for anchor detection. >1 spawns separate processes, each loading its own Whisper model. GPU mode forces 1."),
     verbose: bool = typer.Option(False, "-v", "--verbose", help="Enable debug logging."),
 ) -> None:
     """Scan INPUT_DIR for videos, detect stage boundaries, and cut clips into OUTPUT_DIR."""
@@ -74,7 +72,6 @@ def run(
         phrase_threshold=phrase_threshold,
         beep_search_before=beep_search_before,
         beep_search_after=beep_search_after,
-        workers=workers,
     )
 
     rows = run_batch(input_dir, output_dir, config)

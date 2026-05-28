@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import asdict, dataclass, field
+from datetime import datetime
 from pathlib import Path
 
 from video_stage_cutter.beep_detect import analyze_beep_candidates, detect_gunshots
@@ -55,7 +56,6 @@ class ProcessingConfig:
     phrase_threshold: float = 70.0
     beep_search_before: float = 0.25
     beep_search_after: float = 10.0
-    workers: int = 1
 
 
 # ---------------------------------------------------------------------------
@@ -142,7 +142,8 @@ class FileInfo:
 # Pass 1: collect anchors
 # ---------------------------------------------------------------------------
 
-def discover_videos(input_dir: Path) -> list[Path]:
+def discover_videos(input_dir: Path) -> tuple[list[Path], dict[Path, datetime | None]]:
+    """Return sorted video list and cached creation_time dict."""
     videos = [
         p for p in input_dir.iterdir()
         if p.is_file() and p.suffix.lower() in VIDEO_EXTENSIONS
@@ -155,7 +156,7 @@ def discover_videos(input_dir: Path) -> list[Path]:
     else:
         videos.sort(key=filename_sort_key)
         log.info("Some files lack creation_time -- sorted %d videos by filename (GoPro-aware)", len(videos))
-    return videos
+    return videos, ct_cache
 
 
 def _transcribe_file(
@@ -188,8 +189,6 @@ def _detect_phrases_global(
     config: ProcessingConfig,
 ) -> list[Anchor]:
     """Phase 1B: run sequence detection on global timeline across all files."""
-    from video_stage_cutter.transcribe import TranscriptSegment, WordInfo
-
     # build global word list with absolute timestamps
     global_segments: list[TranscriptSegment] = []
     word_file_map: list[int] = []  # maps global word index → file_idx
@@ -348,6 +347,17 @@ def _collect_audio_anchors_for_file(
                         anchor.kind, anchor.file_offset, len(beeps))
 
         fi.beep_searches.append(record)
+
+    # dedup beep anchors: multiple search windows may find the same beep
+    beep_anchors = [a for a in anchors if a.kind == "beep"]
+    if len(beep_anchors) > 1:
+        unique_beeps: list[Anchor] = [beep_anchors[0]]
+        for b in beep_anchors[1:]:
+            if all(abs(b.file_offset - u.file_offset) > 0.5 for u in unique_beeps):
+                unique_beeps.append(b)
+            else:
+                log.info("  Dedup beep: dropped duplicate at %.3fs", b.file_offset)
+        anchors = [a for a in anchors if a.kind != "beep"] + unique_beeps
 
     # --- gunshot detection: full file ---
     log.info("  Detecting gunshots ...")
@@ -1034,6 +1044,7 @@ def _build_output_name(video_path: Path, creation_str: str, tag: str = "") -> st
 
 
 def _stage_confidence(stage: Stage) -> float:
+    """Base confidence = best anchor score. More anchors boost via _boost_all_stages."""
     scores: list[float] = []
     if stage.beep:
         scores.append(stage.beep.score / 100.0)
@@ -1043,9 +1054,7 @@ def _stage_confidence(stage: Stage) -> float:
         scores.append(stage.ready.score / 100.0)
     if stage.end_command:
         scores.append(stage.end_command.score / 100.0)
-    if stage.gunshots:
-        scores.append(min(1.0, len(stage.gunshots) / 5.0))
-    return sum(scores) / len(scores) if scores else 0.0
+    return max(scores) if scores else 0.0
 
 
 def _save_stage_debug(
@@ -1153,7 +1162,7 @@ def run_batch(
 ) -> list[ManifestRow]:
     from tqdm import tqdm
 
-    videos = discover_videos(input_dir)
+    videos, ct_cache = discover_videos(input_dir)
     if not videos:
         log.warning("No video files found in %s", input_dir)
         return []
@@ -1168,14 +1177,14 @@ def run_batch(
     wav_dir.mkdir(parents=True, exist_ok=True)
 
     durations = {vp: get_duration(vp) for vp in videos}
-    has_all_metadata = all(get_creation_time(v) is not None for v in videos)
+    has_all_metadata = all(ct is not None for ct in ct_cache.values())
 
     files: list[FileInfo] = []
     synthetic_epoch = 0.0
 
     for vp in videos:
         dur = durations[vp]
-        creation_dt = get_creation_time(vp)
+        creation_dt = ct_cache[vp]
 
         if has_all_metadata and creation_dt is not None:
             epoch = creation_dt.timestamp()
