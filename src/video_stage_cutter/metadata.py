@@ -88,9 +88,9 @@ def _ffprobe_json(video_path: Path) -> dict:
 
 
 def _extract_creation_time(probe: dict) -> datetime | None:
-    raw = None
     fmt_tags = probe.get("format", {}).get("tags", {})
-    raw = fmt_tags.get("creation_time") or fmt_tags.get("com.apple.quicktime.creationdate")
+    # prefer quicktime tag — it usually has timezone info (iPhone, DJI)
+    raw = fmt_tags.get("com.apple.quicktime.creationdate") or fmt_tags.get("creation_time")
 
     if raw is None:
         for stream in probe.get("streams", []):
