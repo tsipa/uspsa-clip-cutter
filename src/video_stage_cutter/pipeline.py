@@ -49,8 +49,8 @@ class ProcessingConfig:
     accurate_cut: bool = True
     keep_wav: bool = False
     debug_dir: Path | None = None
-    start_padding: float = 20.0
-    end_padding: float = 20.0
+    start_padding: float = 10.0
+    end_padding: float = 10.0
     min_clip_length: float = 5.0
     max_clip_length: float = 600.0
     overwrite: bool = False
@@ -392,6 +392,10 @@ def _assemble_stages(anchors: list[Anchor], min_clip_length: float = 5.0) -> lis
 
     stages = confirmed + trimmed_fallbacks
     stages.sort(key=lambda s: s.clip_start)
+
+    # --- final dedup: remove stages that substantially overlap a better stage ---
+    stages = _dedup_overlapping_stages(stages)
+
     return stages
 
 
@@ -488,6 +492,67 @@ def _trim_fallback(
                  orig_start, orig_end, best_start, best_end, stage.trimmed_by)
 
     return stage
+
+
+def _dedup_overlapping_stages(stages: list[Stage]) -> list[Stage]:
+    """Remove stages that substantially overlap a better stage.
+
+    Priority: confirmed > fallback. Among same type, longer phrase match wins.
+    A stage is removed if >50% of its duration overlaps a higher-priority stage.
+    """
+    if len(stages) <= 1:
+        return stages
+
+    keep: list[Stage] = []
+    for stage in stages:
+        dominated = False
+        for other in keep:
+            overlap = _overlap_seconds(stage, other)
+            shorter_dur = min(stage.duration, other.duration)
+            if shorter_dur <= 0:
+                continue
+            if overlap / shorter_dur > 0.5:
+                # one dominates the other — keep the better one
+                if _stage_priority(other) >= _stage_priority(stage):
+                    dominated = True
+                    log.info("  Dedup: dropping stage %.2f-%.2f (%s) — overlaps %.2f-%.2f (%s)",
+                             stage.clip_start, stage.clip_end, stage.start_reason,
+                             other.clip_start, other.clip_end, other.start_reason)
+                    break
+        if not dominated:
+            # check if this stage dominates any already-kept stage
+            new_keep: list[Stage] = []
+            for other in keep:
+                overlap = _overlap_seconds(stage, other)
+                shorter_dur = min(stage.duration, other.duration)
+                if shorter_dur > 0 and overlap / shorter_dur > 0.5 and _stage_priority(stage) > _stage_priority(other):
+                    log.info("  Dedup: replacing stage %.2f-%.2f with %.2f-%.2f",
+                             other.clip_start, other.clip_end, stage.clip_start, stage.clip_end)
+                else:
+                    new_keep.append(other)
+            new_keep.append(stage)
+            keep = new_keep
+
+    log.info("  Dedup: %d stages -> %d stages", len(stages), len(keep))
+    return keep
+
+
+def _overlap_seconds(a: Stage, b: Stage) -> float:
+    start = max(a.clip_start, b.clip_start)
+    end = min(a.clip_end, b.clip_end)
+    return max(0.0, end - start)
+
+
+def _stage_priority(s: Stage) -> int:
+    """Higher = better. Confirmed > fallback, longer end match > shorter."""
+    priority = 0
+    if s.complete:
+        priority += 1000
+    if s.end_command:
+        priority += len(s.end_command.text)
+    if s.beep:
+        priority += 100
+    return priority
 
 
 def _subtract_intervals(
