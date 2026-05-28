@@ -324,6 +324,35 @@ class TestReadyWithoutStandby:
         assert stages[0].complete is False
         assert "no_start" in stages[0].start_reason
 
+    def test_multiple_starts_same_stage_no_duplicates(self) -> None:
+        """make_ready + are_you_ready + standby + beep + end = ONE stage.
+        The earlier ready/standby anchors must not create extra fallback stages."""
+        anchors = [
+            Anchor(kind="ready",       abs_time=100.0, file_idx=0, file_offset=5.0,   text="make ready",    score=100, end_offset=6.0),
+            Anchor(kind="ready",       abs_time=130.0, file_idx=0, file_offset=35.0,  text="are you ready", score=100, end_offset=36.0),
+            Anchor(kind="standby",     abs_time=132.0, file_idx=0, file_offset=37.0,  text="stand by",      score=100, end_offset=38.0),
+            Anchor(kind="beep",        abs_time=134.0, file_idx=0, file_offset=39.0,  text="timer_beep",    score=80),
+            Anchor(kind="gunshot",     abs_time=136.0, file_idx=0, file_offset=41.0,  text="gunshot",       score=70),
+            Anchor(kind="end_command", abs_time=160.0, file_idx=0, file_offset=65.0,  text="hammer down",   score=85, end_offset=66.0),
+        ]
+        stages = _assemble_stages(anchors)
+        assert len(stages) == 1, f"Expected 1 stage, got {len(stages)}: {[(s.start_reason, s.end_reason) for s in stages]}"
+        assert stages[0].complete is True
+
+    def test_ready_before_confirmed_no_extra_fallback(self) -> None:
+        """A 'make ready' 30s before a confirmed stage must not create a separate fallback."""
+        anchors = [
+            Anchor(kind="ready",       abs_time=100.0, file_idx=0, file_offset=5.0,   text="make ready",    score=100, end_offset=6.0),
+            Anchor(kind="standby",     abs_time=125.0, file_idx=0, file_offset=30.0,  text="stand by",      score=100, end_offset=31.0),
+            Anchor(kind="beep",        abs_time=127.0, file_idx=0, file_offset=32.0,  text="timer_beep",    score=80),
+            Anchor(kind="end_command", abs_time=150.0, file_idx=0, file_offset=55.0,  text="hammer down",   score=85, end_offset=56.0),
+        ]
+        stages = _assemble_stages(anchors)
+        confirmed = [s for s in stages if s.complete]
+        fallback = [s for s in stages if not s.complete]
+        assert len(confirmed) == 1
+        assert len(fallback) == 0, f"Unexpected fallback: {[(s.start_reason, s.end_reason) for s in fallback]}"
+
     def test_beep_search_record_has_anchor_kind(self) -> None:
         """BeepSearchRecord should record anchor_kind='ready' when no standby."""
         from video_stage_cutter.pipeline import BeepSearchRecord

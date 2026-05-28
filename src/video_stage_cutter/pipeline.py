@@ -462,20 +462,21 @@ def _assemble_stages(anchors: list[Anchor], min_clip_length: float = 5.0) -> lis
             _log_stage(stage, len(confirmed), "CONFIRMED (no beep)")
 
     # --- fourth pass: start without beep or end → fallback 3min from start ---
+    # mark all start anchors that fall within or near (30s before) any confirmed stage
+    all_confirmed_intervals = []
+    for stage in confirmed:
+        all_confirmed_intervals.append((stage.clip_start - 60.0, stage.clip_end))
+    for stage in fallback_no_end:
+        all_confirmed_intervals.append((stage.clip_start - 60.0, stage.clip_end))
+
     fallback_start_only: list[Stage] = []
     for si in start_indices:
         if si in used_starts:
             continue
         start_a = anchors[si]
         already_used = False
-        for stage in confirmed + fallback_no_end:
-            if stage.standby and abs(stage.standby.abs_time - start_a.abs_time) < 1.0:
-                already_used = True
-                break
-            if stage.ready and abs(stage.ready.abs_time - start_a.abs_time) < 1.0:
-                already_used = True
-                break
-            if stage.beep and abs(stage.beep.abs_time - start_a.abs_time) < 30.0:
+        for iv_start, iv_end in all_confirmed_intervals:
+            if iv_start <= start_a.abs_time <= iv_end:
                 already_used = True
                 break
         if already_used:
@@ -991,6 +992,7 @@ def _transcribe(
             "Range is clear. Stage is clear."
         ),
         vad_filter=True,
+        vad_parameters={"min_silence_duration_ms": 500, "speech_pad_ms": 300},
     )
 
     segments: list[TranscriptSegment] = []

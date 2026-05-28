@@ -56,12 +56,12 @@ def detect_beeps(
     wide_freq_low: float = 300.0,
     wide_freq_high: float = 8000.0,
     collapse_window: float = 0.3,
-    min_tonality: float = 0.15,
-    min_broadband_ratio: float = 0.10,
-    max_spectral_flatness: float = 0.8,
-    min_duration_ms: float = 80.0,
+    min_tonality: float = 0.03,
+    min_broadband_ratio: float = 0.05,
+    max_spectral_flatness: float = 0.9,
+    min_duration_ms: float = 20.0,
     max_duration_ms: float = 500.0,
-    max_neighbors_1s: int = 3,
+    max_neighbors_1s: int = 5,
 ) -> list[BeepCandidate]:
     """Detect high-frequency tonal beeps.
 
