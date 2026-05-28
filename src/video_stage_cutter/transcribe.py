@@ -45,10 +45,12 @@ def transcribe_audio(
         word_timestamps=True,
         language="en",
         initial_prompt=(
-            "USPSA shooting match. Range officer commands: "
-            "Shooter make ready. Are you ready? Stand by. "
-            "If clear, hammer down and holster. "
-            "If finished, unload and show clear. Range is clear."
+            "USPSA practical shooting match. Range officer commands: "
+            "Load and make ready. Make ready. Shooter ready. "
+            "Are you ready? Stand by. Standby. "
+            "If you are finished, unload and show clear. "
+            "If clear, hammer down and holster. Hammer down. Holster. "
+            "Range is clear. Stage is clear."
         ),
         vad_filter=True,
     )
