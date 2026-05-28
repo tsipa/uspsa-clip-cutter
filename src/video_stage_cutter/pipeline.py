@@ -58,7 +58,7 @@ class ProcessingConfig:
     phrase_threshold: float = 70.0
     beep_search_before: float = 0.25
     beep_search_after: float = 10.0
-    workers: int = 0  # 0 = auto (0.75 * cpu_count)
+    workers: int = 1
 
 
 # ---------------------------------------------------------------------------
