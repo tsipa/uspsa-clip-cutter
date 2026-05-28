@@ -1,0 +1,706 @@
+{
+  "source": "DJI_0298.MP4",
+  "language": "en",
+  "duration": 273.28,
+  "segments": [
+    {
+      "start": 89.55,
+      "end": 232.31,
+      "text": "Take 226, ready. Stand by. Clear, 29-20. 29-20. Two Alpha, one Charlie. Two Alpha, one Charlie. Alpha, one Delta. One Alpha, one Charlie, one Delta. Alpha, Charlie, Delta. Alpha, one Delta. Two Alpha, one Delta. Thank you. One Alpha, two Charlie. Three Alpha, three Alpha, you got that? Oh, no I didn't get that. Three Alpha. Shooter.",
+      "words": [
+        {
+          "start": 89.55,
+          "end": 89.63,
+          "word": " Take",
+          "probability": 0.006126181222498417
+        },
+        {
+          "start": 89.63,
+          "end": 90.17,
+          "word": " 226,",
+          "probability": 0.8079215288162231
+        },
+        {
+          "start": 90.57,
+          "end": 90.83,
+          "word": " ready.",
+          "probability": 0.5706737637519836
+        },
+        {
+          "start": 118.56,
+          "end": 119.08,
+          "word": " Stand",
+          "probability": 0.8956062197685242
+        },
+        {
+          "start": 119.08,
+          "end": 119.52,
+          "word": " by.",
+          "probability": 0.6493696570396423
+        },
+        {
+          "start": 158.47,
+          "end": 158.71,
+          "word": " Clear,",
+          "probability": 0.8181907534599304
+        },
+        {
+          "start": 158.89,
+          "end": 159.19,
+          "word": " 29",
+          "probability": 0.9168612957000732
+        },
+        {
+          "start": 159.19,
+          "end": 159.61,
+          "word": "-20.",
+          "probability": 0.6619933843612671
+        },
+        {
+          "start": 160.45,
+          "end": 160.97,
+          "word": " 29",
+          "probability": 0.8820997476577759
+        },
+        {
+          "start": 160.97,
+          "end": 161.45,
+          "word": "-20.",
+          "probability": 0.9140253365039825
+        },
+        {
+          "start": 168.54,
+          "end": 168.74,
+          "word": " Two",
+          "probability": 0.4760989844799042
+        },
+        {
+          "start": 168.74,
+          "end": 169.0,
+          "word": " Alpha,",
+          "probability": 0.582848310470581
+        },
+        {
+          "start": 169.14,
+          "end": 169.24,
+          "word": " one",
+          "probability": 0.9211329817771912
+        },
+        {
+          "start": 169.24,
+          "end": 169.58,
+          "word": " Charlie.",
+          "probability": 0.6344569325447083
+        },
+        {
+          "start": 170.26,
+          "end": 170.68,
+          "word": " Two",
+          "probability": 0.9386289119720459
+        },
+        {
+          "start": 170.68,
+          "end": 171.04,
+          "word": " Alpha,",
+          "probability": 0.9833434820175171
+        },
+        {
+          "start": 171.24,
+          "end": 171.4,
+          "word": " one",
+          "probability": 0.9948723912239075
+        },
+        {
+          "start": 171.4,
+          "end": 171.78,
+          "word": " Charlie.",
+          "probability": 0.9919984936714172
+        },
+        {
+          "start": 178.04,
+          "end": 178.56,
+          "word": " Alpha,",
+          "probability": 0.6761415004730225
+        },
+        {
+          "start": 178.86,
+          "end": 179.04,
+          "word": " one",
+          "probability": 0.9831349849700928
+        },
+        {
+          "start": 179.04,
+          "end": 179.32,
+          "word": " Delta.",
+          "probability": 0.9893231987953186
+        },
+        {
+          "start": 183.29,
+          "end": 183.53,
+          "word": " One",
+          "probability": 0.8211931586265564
+        },
+        {
+          "start": 183.53,
+          "end": 183.85,
+          "word": " Alpha,",
+          "probability": 0.9870437979698181
+        },
+        {
+          "start": 184.07,
+          "end": 184.21,
+          "word": " one",
+          "probability": 0.9938411712646484
+        },
+        {
+          "start": 184.21,
+          "end": 184.59,
+          "word": " Charlie,",
+          "probability": 0.9969447255134583
+        },
+        {
+          "start": 184.79,
+          "end": 184.89,
+          "word": " one",
+          "probability": 0.992220938205719
+        },
+        {
+          "start": 184.89,
+          "end": 185.19,
+          "word": " Delta.",
+          "probability": 0.9971707463264465
+        },
+        {
+          "start": 185.61,
+          "end": 186.09,
+          "word": " Alpha,",
+          "probability": 0.9547353982925415
+        },
+        {
+          "start": 186.27,
+          "end": 186.63,
+          "word": " Charlie,",
+          "probability": 0.9513698816299438
+        },
+        {
+          "start": 186.83,
+          "end": 187.07,
+          "word": " Delta.",
+          "probability": 0.9835084080696106
+        },
+        {
+          "start": 203.4,
+          "end": 203.64,
+          "word": " Alpha,",
+          "probability": 0.9145986437797546
+        },
+        {
+          "start": 203.88,
+          "end": 204.04,
+          "word": " one",
+          "probability": 0.9859977960586548
+        },
+        {
+          "start": 204.04,
+          "end": 204.42,
+          "word": " Delta.",
+          "probability": 0.9949122071266174
+        },
+        {
+          "start": 205.18,
+          "end": 205.36,
+          "word": " Two",
+          "probability": 0.8827406167984009
+        },
+        {
+          "start": 205.36,
+          "end": 205.82,
+          "word": " Alpha,",
+          "probability": 0.9948931932449341
+        },
+        {
+          "start": 206.14,
+          "end": 206.32,
+          "word": " one",
+          "probability": 0.9946381449699402
+        },
+        {
+          "start": 206.32,
+          "end": 206.6,
+          "word": " Delta.",
+          "probability": 0.9979788661003113
+        },
+        {
+          "start": 217.76,
+          "end": 218.12,
+          "word": " Thank",
+          "probability": 0.7043417096138
+        },
+        {
+          "start": 218.12,
+          "end": 218.26,
+          "word": " you.",
+          "probability": 0.9589869379997253
+        },
+        {
+          "start": 218.46,
+          "end": 218.72,
+          "word": " One",
+          "probability": 0.9413524270057678
+        },
+        {
+          "start": 218.72,
+          "end": 219.04,
+          "word": " Alpha,",
+          "probability": 0.9932554960250854
+        },
+        {
+          "start": 219.2,
+          "end": 219.36,
+          "word": " two",
+          "probability": 0.985564649105072
+        },
+        {
+          "start": 219.36,
+          "end": 219.76,
+          "word": " Charlie.",
+          "probability": 0.9914553761482239
+        },
+        {
+          "start": 220.02,
+          "end": 220.28,
+          "word": " Three",
+          "probability": 0.9645623564720154
+        },
+        {
+          "start": 220.28,
+          "end": 220.6,
+          "word": " Alpha,",
+          "probability": 0.9917193651199341
+        },
+        {
+          "start": 222.79,
+          "end": 223.07,
+          "word": " three",
+          "probability": 0.7557865381240845
+        },
+        {
+          "start": 223.07,
+          "end": 223.35,
+          "word": " Alpha,",
+          "probability": 0.9770698547363281
+        },
+        {
+          "start": 223.59,
+          "end": 223.71,
+          "word": " you",
+          "probability": 0.33263999223709106
+        },
+        {
+          "start": 223.71,
+          "end": 223.81,
+          "word": " got",
+          "probability": 0.9399048089981079
+        },
+        {
+          "start": 223.81,
+          "end": 223.83,
+          "word": " that?",
+          "probability": 0.9735800623893738
+        },
+        {
+          "start": 223.87,
+          "end": 224.09,
+          "word": " Oh,",
+          "probability": 0.5462929606437683
+        },
+        {
+          "start": 224.25,
+          "end": 224.29,
+          "word": " no",
+          "probability": 0.6747989654541016
+        },
+        {
+          "start": 224.29,
+          "end": 224.39,
+          "word": " I",
+          "probability": 0.4709143340587616
+        },
+        {
+          "start": 224.39,
+          "end": 224.45,
+          "word": " didn't",
+          "probability": 0.9326474368572235
+        },
+        {
+          "start": 224.45,
+          "end": 224.61,
+          "word": " get",
+          "probability": 0.9868255257606506
+        },
+        {
+          "start": 224.61,
+          "end": 224.77,
+          "word": " that.",
+          "probability": 0.45727482438087463
+        },
+        {
+          "start": 225.11,
+          "end": 225.31,
+          "word": " Three",
+          "probability": 0.9413848519325256
+        },
+        {
+          "start": 225.31,
+          "end": 225.57,
+          "word": " Alpha.",
+          "probability": 0.989081621170044
+        },
+        {
+          "start": 231.93,
+          "end": 232.31,
+          "word": " Shooter.",
+          "probability": 0.04739814903587103
+        }
+      ]
+    },
+    {
+      "start": 232.31,
+      "end": 261.7,
+      "text": "And one of these two you shot twice at and you moved on. That's supposed to do it. Two Alpha, one Mike. Two Delta. One Alpha, two Delta. One Alpha, two Delta. Last target? Last target. Charlie. Good one. Huh. One Alpha, one Charlie, one Mike. One Alpha, one Charles, one Mike. Complete.",
+      "words": [
+        {
+          "start": 232.31,
+          "end": 232.91,
+          "word": " And",
+          "probability": 0.2266380339860916
+        },
+        {
+          "start": 232.91,
+          "end": 233.13,
+          "word": " one",
+          "probability": 0.9497009515762329
+        },
+        {
+          "start": 233.13,
+          "end": 233.23,
+          "word": " of",
+          "probability": 0.998488187789917
+        },
+        {
+          "start": 233.23,
+          "end": 233.41,
+          "word": " these",
+          "probability": 0.9988383650779724
+        },
+        {
+          "start": 233.41,
+          "end": 233.69,
+          "word": " two",
+          "probability": 0.834261417388916
+        },
+        {
+          "start": 233.69,
+          "end": 233.83,
+          "word": " you",
+          "probability": 0.8659381866455078
+        },
+        {
+          "start": 233.83,
+          "end": 234.07,
+          "word": " shot",
+          "probability": 0.9908103942871094
+        },
+        {
+          "start": 234.07,
+          "end": 234.31,
+          "word": " twice",
+          "probability": 0.9943655729293823
+        },
+        {
+          "start": 234.31,
+          "end": 234.57,
+          "word": " at",
+          "probability": 0.6270637512207031
+        },
+        {
+          "start": 234.57,
+          "end": 234.67,
+          "word": " and",
+          "probability": 0.42325639724731445
+        },
+        {
+          "start": 234.67,
+          "end": 234.71,
+          "word": " you",
+          "probability": 0.9660502076148987
+        },
+        {
+          "start": 234.71,
+          "end": 234.89,
+          "word": " moved",
+          "probability": 0.9517912268638611
+        },
+        {
+          "start": 234.89,
+          "end": 235.11,
+          "word": " on.",
+          "probability": 0.9931454658508301
+        },
+        {
+          "start": 235.39,
+          "end": 235.75,
+          "word": " That's",
+          "probability": 0.7480745613574982
+        },
+        {
+          "start": 235.75,
+          "end": 235.87,
+          "word": " supposed",
+          "probability": 0.441104918718338
+        },
+        {
+          "start": 235.87,
+          "end": 236.03,
+          "word": " to",
+          "probability": 0.991333544254303
+        },
+        {
+          "start": 236.03,
+          "end": 236.19,
+          "word": " do",
+          "probability": 0.2602897584438324
+        },
+        {
+          "start": 236.19,
+          "end": 236.31,
+          "word": " it.",
+          "probability": 0.7816450595855713
+        },
+        {
+          "start": 236.41,
+          "end": 236.59,
+          "word": " Two",
+          "probability": 0.14229968190193176
+        },
+        {
+          "start": 236.59,
+          "end": 236.85,
+          "word": " Alpha,",
+          "probability": 0.45445436239242554
+        },
+        {
+          "start": 237.05,
+          "end": 237.07,
+          "word": " one",
+          "probability": 0.914788007736206
+        },
+        {
+          "start": 237.07,
+          "end": 237.31,
+          "word": " Mike.",
+          "probability": 0.3953627049922943
+        },
+        {
+          "start": 240.46,
+          "end": 240.62,
+          "word": " Two",
+          "probability": 0.598469078540802
+        },
+        {
+          "start": 240.62,
+          "end": 240.82,
+          "word": " Delta.",
+          "probability": 0.5508078932762146
+        },
+        {
+          "start": 241.3,
+          "end": 241.5,
+          "word": " One",
+          "probability": 0.858413577079773
+        },
+        {
+          "start": 241.5,
+          "end": 241.82,
+          "word": " Alpha,",
+          "probability": 0.9875925183296204
+        },
+        {
+          "start": 241.98,
+          "end": 242.08,
+          "word": " two",
+          "probability": 0.784877598285675
+        },
+        {
+          "start": 242.08,
+          "end": 242.34,
+          "word": " Delta.",
+          "probability": 0.9684605598449707
+        },
+        {
+          "start": 242.84,
+          "end": 243.06,
+          "word": " One",
+          "probability": 0.6196167469024658
+        },
+        {
+          "start": 243.06,
+          "end": 243.32,
+          "word": " Alpha,",
+          "probability": 0.9858347773551941
+        },
+        {
+          "start": 244.34,
+          "end": 244.56,
+          "word": " two",
+          "probability": 0.5247021317481995
+        },
+        {
+          "start": 244.56,
+          "end": 244.86,
+          "word": " Delta.",
+          "probability": 0.9579523801803589
+        },
+        {
+          "start": 245.18,
+          "end": 245.42,
+          "word": " Last",
+          "probability": 0.5932249426841736
+        },
+        {
+          "start": 245.42,
+          "end": 245.84,
+          "word": " target?",
+          "probability": 0.8479362726211548
+        },
+        {
+          "start": 246.1,
+          "end": 246.28,
+          "word": " Last",
+          "probability": 0.7212042212486267
+        },
+        {
+          "start": 246.28,
+          "end": 246.5,
+          "word": " target.",
+          "probability": 0.9446274042129517
+        },
+        {
+          "start": 249.95,
+          "end": 250.43,
+          "word": " Charlie.",
+          "probability": 0.7244294285774231
+        },
+        {
+          "start": 253.96,
+          "end": 254.14,
+          "word": " Good",
+          "probability": 0.20775176584720612
+        },
+        {
+          "start": 254.14,
+          "end": 254.34,
+          "word": " one.",
+          "probability": 0.48156312108039856
+        },
+        {
+          "start": 254.92,
+          "end": 255.0,
+          "word": " Huh.",
+          "probability": 0.3522009551525116
+        },
+        {
+          "start": 256.48,
+          "end": 256.96,
+          "word": " One",
+          "probability": 0.9496901035308838
+        },
+        {
+          "start": 256.96,
+          "end": 257.32,
+          "word": " Alpha,",
+          "probability": 0.9917089343070984
+        },
+        {
+          "start": 257.52,
+          "end": 257.6,
+          "word": " one",
+          "probability": 0.9900015592575073
+        },
+        {
+          "start": 257.6,
+          "end": 258.04,
+          "word": " Charlie,",
+          "probability": 0.9971590042114258
+        },
+        {
+          "start": 258.5,
+          "end": 258.72,
+          "word": " one",
+          "probability": 0.9962814450263977
+        },
+        {
+          "start": 258.72,
+          "end": 259.0,
+          "word": " Mike.",
+          "probability": 0.9985107779502869
+        },
+        {
+          "start": 259.42,
+          "end": 259.66,
+          "word": " One",
+          "probability": 0.9722819924354553
+        },
+        {
+          "start": 259.66,
+          "end": 259.94,
+          "word": " Alpha,",
+          "probability": 0.997380793094635
+        },
+        {
+          "start": 260.1,
+          "end": 260.26,
+          "word": " one",
+          "probability": 0.9878315329551697
+        },
+        {
+          "start": 260.26,
+          "end": 260.58,
+          "word": " Charles,",
+          "probability": 0.9142417907714844
+        },
+        {
+          "start": 260.82,
+          "end": 260.92,
+          "word": " one",
+          "probability": 0.9958341121673584
+        },
+        {
+          "start": 260.92,
+          "end": 261.26,
+          "word": " Mike.",
+          "probability": 0.9977754950523376
+        },
+        {
+          "start": 261.48,
+          "end": 261.7,
+          "word": " Complete.",
+          "probability": 0.7836931347846985
+        }
+      ]
+    },
+    {
+      "start": 261.7,
+      "end": 263.28,
+      "text": "Nicholas.",
+      "words": [
+        {
+          "start": 261.7,
+          "end": 263.28,
+          "word": " Nicholas.",
+          "probability": 0.05523713305592537
+        }
+      ]
+    }
+  ]
+}

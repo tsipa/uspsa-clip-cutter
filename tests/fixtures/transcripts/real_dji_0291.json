@@ -1,0 +1,463 @@
+{
+  "source": "DJI_0291.MP4",
+  "language": "en",
+  "duration": 151.74,
+  "segments": [
+    {
+      "start": 3.34,
+      "end": 70.4,
+      "text": "Shooter, holster, it's on deck. I'm in the hold. John is in the deep hole. Stand by.",
+      "words": [
+        {
+          "start": 3.34,
+          "end": 4.06,
+          "word": " Shooter,",
+          "probability": 0.10904619275243022
+        },
+        {
+          "start": 4.1,
+          "end": 4.82,
+          "word": " holster,",
+          "probability": 0.003949454287067056
+        },
+        {
+          "start": 4.82,
+          "end": 4.94,
+          "word": " it's",
+          "probability": 0.7813034951686859
+        },
+        {
+          "start": 4.94,
+          "end": 5.06,
+          "word": " on",
+          "probability": 0.9826061725616455
+        },
+        {
+          "start": 5.06,
+          "end": 5.28,
+          "word": " deck.",
+          "probability": 0.8903436660766602
+        },
+        {
+          "start": 5.58,
+          "end": 5.86,
+          "word": " I'm",
+          "probability": 0.5849275290966034
+        },
+        {
+          "start": 5.86,
+          "end": 5.92,
+          "word": " in",
+          "probability": 0.9792528748512268
+        },
+        {
+          "start": 5.92,
+          "end": 6.04,
+          "word": " the",
+          "probability": 0.9925116300582886
+        },
+        {
+          "start": 6.04,
+          "end": 6.3,
+          "word": " hold.",
+          "probability": 0.13657552003860474
+        },
+        {
+          "start": 6.84,
+          "end": 7.22,
+          "word": " John",
+          "probability": 0.6419546008110046
+        },
+        {
+          "start": 7.22,
+          "end": 7.5,
+          "word": " is",
+          "probability": 0.9283502101898193
+        },
+        {
+          "start": 7.5,
+          "end": 7.66,
+          "word": " in",
+          "probability": 0.9808465838432312
+        },
+        {
+          "start": 7.66,
+          "end": 7.78,
+          "word": " the",
+          "probability": 0.9590160250663757
+        },
+        {
+          "start": 7.78,
+          "end": 7.94,
+          "word": " deep",
+          "probability": 0.9503306746482849
+        },
+        {
+          "start": 7.94,
+          "end": 8.24,
+          "word": " hole.",
+          "probability": 0.8436688780784607
+        },
+        {
+          "start": 69.56,
+          "end": 70.08,
+          "word": " Stand",
+          "probability": 0.8820273280143738
+        },
+        {
+          "start": 70.08,
+          "end": 70.4,
+          "word": " by.",
+          "probability": 0.6518883109092712
+        }
+      ]
+    },
+    {
+      "start": 70.88,
+      "end": 94.98,
+      "text": "Didn't show clear. Clear. Hammer down. Range is clear, 15.97.",
+      "words": [
+        {
+          "start": 70.88,
+          "end": 71.18,
+          "word": " Didn't",
+          "probability": 0.5154717862606049
+        },
+        {
+          "start": 87.5,
+          "end": 87.64,
+          "word": " show",
+          "probability": 0.982727587223053
+        },
+        {
+          "start": 87.64,
+          "end": 87.88,
+          "word": " clear.",
+          "probability": 0.8842085003852844
+        },
+        {
+          "start": 89.0,
+          "end": 89.3,
+          "word": " Clear.",
+          "probability": 0.9752172231674194
+        },
+        {
+          "start": 89.56,
+          "end": 89.74,
+          "word": " Hammer",
+          "probability": 0.21928063035011292
+        },
+        {
+          "start": 89.74,
+          "end": 89.96,
+          "word": " down.",
+          "probability": 0.9269813299179077
+        },
+        {
+          "start": 93.34,
+          "end": 93.48,
+          "word": " Range",
+          "probability": 0.002854458522051573
+        },
+        {
+          "start": 93.48,
+          "end": 93.62,
+          "word": " is",
+          "probability": 0.8924487829208374
+        },
+        {
+          "start": 93.62,
+          "end": 93.86,
+          "word": " clear,",
+          "probability": 0.6182563900947571
+        },
+        {
+          "start": 94.16,
+          "end": 94.48,
+          "word": " 15",
+          "probability": 0.8549558520317078
+        },
+        {
+          "start": 94.48,
+          "end": 94.98,
+          "word": ".97.",
+          "probability": 0.6232501864433289
+        }
+      ]
+    },
+    {
+      "start": 99.3,
+      "end": 125.74,
+      "text": "Two alpha. Two Alpha. Two Alpha. Two Alpha. Two Alpha. Two Alpha. Two Alpha. Two Alpha. Alpha. Alpha. Alpha. Alpha Charlie.",
+      "words": [
+        {
+          "start": 99.3,
+          "end": 99.6,
+          "word": " Two",
+          "probability": 0.31200486421585083
+        },
+        {
+          "start": 99.6,
+          "end": 99.82,
+          "word": " alpha.",
+          "probability": 0.5007944703102112
+        },
+        {
+          "start": 99.98,
+          "end": 100.14,
+          "word": " Two",
+          "probability": 0.831299364566803
+        },
+        {
+          "start": 100.14,
+          "end": 100.42,
+          "word": " Alpha.",
+          "probability": 0.311288446187973
+        },
+        {
+          "start": 101.1,
+          "end": 101.62,
+          "word": " Two",
+          "probability": 0.8669285774230957
+        },
+        {
+          "start": 101.62,
+          "end": 101.88,
+          "word": " Alpha.",
+          "probability": 0.8927551507949829
+        },
+        {
+          "start": 102.1,
+          "end": 102.22,
+          "word": " Two",
+          "probability": 0.8976371884346008
+        },
+        {
+          "start": 102.22,
+          "end": 102.22,
+          "word": " Alpha.",
+          "probability": 0.9061406850814819
+        },
+        {
+          "start": 102.22,
+          "end": 102.22,
+          "word": " Two",
+          "probability": 0.8461385369300842
+        },
+        {
+          "start": 102.22,
+          "end": 102.38,
+          "word": " Alpha.",
+          "probability": 0.9422105550765991
+        },
+        {
+          "start": 108.03,
+          "end": 108.23,
+          "word": " Two",
+          "probability": 0.842136025428772
+        },
+        {
+          "start": 108.23,
+          "end": 108.53,
+          "word": " Alpha.",
+          "probability": 0.9111456274986267
+        },
+        {
+          "start": 108.73,
+          "end": 108.85,
+          "word": " Two",
+          "probability": 0.7971398830413818
+        },
+        {
+          "start": 108.85,
+          "end": 109.19,
+          "word": " Alpha.",
+          "probability": 0.9523305296897888
+        },
+        {
+          "start": 114.57,
+          "end": 115.09,
+          "word": " Two",
+          "probability": 0.8068373203277588
+        },
+        {
+          "start": 115.09,
+          "end": 116.19,
+          "word": " Alpha.",
+          "probability": 0.9779425263404846
+        },
+        {
+          "start": 123.48,
+          "end": 124.0,
+          "word": " Alpha.",
+          "probability": 0.0648721307516098
+        },
+        {
+          "start": 124.0,
+          "end": 124.18,
+          "word": " Alpha.",
+          "probability": 0.512834906578064
+        },
+        {
+          "start": 124.7,
+          "end": 125.22,
+          "word": " Alpha.",
+          "probability": 0.6253966689109802
+        },
+        {
+          "start": 125.22,
+          "end": 125.36,
+          "word": " Alpha",
+          "probability": 0.7365275621414185
+        },
+        {
+          "start": 125.36,
+          "end": 125.74,
+          "word": " Charlie.",
+          "probability": 0.2882624566555023
+        }
+      ]
+    },
+    {
+      "start": 127.1,
+      "end": 139.6,
+      "text": "You are our shooter. I'm on deck. Sean, you're in the hole.",
+      "words": [
+        {
+          "start": 127.1,
+          "end": 127.44,
+          "word": " You",
+          "probability": 0.2753226161003113
+        },
+        {
+          "start": 136.98,
+          "end": 137.16,
+          "word": " are",
+          "probability": 0.8780294060707092
+        },
+        {
+          "start": 137.16,
+          "end": 137.32,
+          "word": " our",
+          "probability": 0.6825520992279053
+        },
+        {
+          "start": 137.32,
+          "end": 137.54,
+          "word": " shooter.",
+          "probability": 0.9373237490653992
+        },
+        {
+          "start": 137.74,
+          "end": 137.9,
+          "word": " I'm",
+          "probability": 0.9641865193843842
+        },
+        {
+          "start": 137.9,
+          "end": 137.94,
+          "word": " on",
+          "probability": 0.8483075499534607
+        },
+        {
+          "start": 137.94,
+          "end": 138.18,
+          "word": " deck.",
+          "probability": 0.9426803588867188
+        },
+        {
+          "start": 138.42,
+          "end": 138.62,
+          "word": " Sean,",
+          "probability": 0.5847632884979248
+        },
+        {
+          "start": 139.1,
+          "end": 139.26,
+          "word": " you're",
+          "probability": 0.9549185335636139
+        },
+        {
+          "start": 139.26,
+          "end": 139.34,
+          "word": " in",
+          "probability": 0.8363380432128906
+        },
+        {
+          "start": 139.34,
+          "end": 139.38,
+          "word": " the",
+          "probability": 0.9940792322158813
+        },
+        {
+          "start": 139.38,
+          "end": 139.6,
+          "word": " hole.",
+          "probability": 0.9021573066711426
+        }
+      ]
+    },
+    {
+      "start": 140.1,
+      "end": 141.34,
+      "text": "Leon, you're in the deep hole.",
+      "words": [
+        {
+          "start": 140.1,
+          "end": 140.44,
+          "word": " Leon,",
+          "probability": 0.6421909928321838
+        },
+        {
+          "start": 140.66,
+          "end": 140.78,
+          "word": " you're",
+          "probability": 0.987086147069931
+        },
+        {
+          "start": 140.78,
+          "end": 140.84,
+          "word": " in",
+          "probability": 0.9607360363006592
+        },
+        {
+          "start": 140.84,
+          "end": 140.9,
+          "word": " the",
+          "probability": 0.9977666139602661
+        },
+        {
+          "start": 140.9,
+          "end": 141.1,
+          "word": " deep",
+          "probability": 0.9548708200454712
+        },
+        {
+          "start": 141.1,
+          "end": 141.34,
+          "word": " hole.",
+          "probability": 0.9924322366714478
+        }
+      ]
+    },
+    {
+      "start": 141.46,
+      "end": 141.74,
+      "text": "Oh, yeah.",
+      "words": [
+        {
+          "start": 141.46,
+          "end": 141.56,
+          "word": " Oh,",
+          "probability": 0.7412246465682983
+        },
+        {
+          "start": 141.6,
+          "end": 141.74,
+          "word": " yeah.",
+          "probability": 0.9805302619934082
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,286 @@
+{
+  "source": "DJI_0288.MP4",
+  "language": "en",
+  "duration": 300.61,
+  "segments": [
+    {
+      "start": 72.3,
+      "end": 125.05,
+      "text": "Shooter rolls on deck. Dave's in the hole. Stand by. Unload. Show clear. If clear, hammer down and holster.",
+      "words": [
+        {
+          "start": 72.3,
+          "end": 72.62,
+          "word": " Shooter",
+          "probability": 0.4972297102212906
+        },
+        {
+          "start": 72.62,
+          "end": 72.92,
+          "word": " rolls",
+          "probability": 0.25153642892837524
+        },
+        {
+          "start": 72.92,
+          "end": 73.94,
+          "word": " on",
+          "probability": 0.9165213108062744
+        },
+        {
+          "start": 73.94,
+          "end": 74.22,
+          "word": " deck.",
+          "probability": 0.878695011138916
+        },
+        {
+          "start": 74.4,
+          "end": 74.62,
+          "word": " Dave's",
+          "probability": 0.8601268827915192
+        },
+        {
+          "start": 74.62,
+          "end": 74.72,
+          "word": " in",
+          "probability": 0.9873521327972412
+        },
+        {
+          "start": 74.72,
+          "end": 74.82,
+          "word": " the",
+          "probability": 0.983927309513092
+        },
+        {
+          "start": 74.82,
+          "end": 75.08,
+          "word": " hole.",
+          "probability": 0.9387867450714111
+        },
+        {
+          "start": 75.34,
+          "end": 75.94,
+          "word": " Stand",
+          "probability": 0.8612105846405029
+        },
+        {
+          "start": 110.76,
+          "end": 111.06,
+          "word": " by.",
+          "probability": 0.5393800735473633
+        },
+        {
+          "start": 120.57,
+          "end": 120.97,
+          "word": " Unload.",
+          "probability": 0.8648616671562195
+        },
+        {
+          "start": 121.55,
+          "end": 121.77,
+          "word": " Show",
+          "probability": 0.12358888983726501
+        },
+        {
+          "start": 121.77,
+          "end": 122.11,
+          "word": " clear.",
+          "probability": 0.7118985652923584
+        },
+        {
+          "start": 122.41,
+          "end": 122.51,
+          "word": " If",
+          "probability": 0.8864713311195374
+        },
+        {
+          "start": 122.51,
+          "end": 122.73,
+          "word": " clear,",
+          "probability": 0.9715860486030579
+        },
+        {
+          "start": 122.87,
+          "end": 122.97,
+          "word": " hammer",
+          "probability": 0.826490044593811
+        },
+        {
+          "start": 122.97,
+          "end": 123.23,
+          "word": " down",
+          "probability": 0.006410909816622734
+        },
+        {
+          "start": 123.23,
+          "end": 123.55,
+          "word": " and",
+          "probability": 0.00011395841283956543
+        },
+        {
+          "start": 123.55,
+          "end": 125.05,
+          "word": " holster.",
+          "probability": 0.6276052743196487
+        }
+      ]
+    },
+    {
+      "start": 125.87,
+      "end": 135.91,
+      "text": "Range is clear. Six. Oh Dave. I got two out. Two Charlie. Two Charlie. Two Charlie. Two Charlie.",
+      "words": [
+        {
+          "start": 125.87,
+          "end": 126.25,
+          "word": " Range",
+          "probability": 0.04651002958416939
+        },
+        {
+          "start": 126.25,
+          "end": 126.37,
+          "word": " is",
+          "probability": 0.9599476456642151
+        },
+        {
+          "start": 126.37,
+          "end": 126.57,
+          "word": " clear.",
+          "probability": 0.9818984866142273
+        },
+        {
+          "start": 127.17,
+          "end": 127.33,
+          "word": " Six.",
+          "probability": 0.7323604822158813
+        },
+        {
+          "start": 127.63,
+          "end": 127.81,
+          "word": " Oh",
+          "probability": 0.8246920704841614
+        },
+        {
+          "start": 127.81,
+          "end": 128.15,
+          "word": " Dave.",
+          "probability": 0.581027626991272
+        },
+        {
+          "start": 128.47,
+          "end": 128.47,
+          "word": " I",
+          "probability": 0.4538366198539734
+        },
+        {
+          "start": 128.47,
+          "end": 129.33,
+          "word": " got",
+          "probability": 0.7840960621833801
+        },
+        {
+          "start": 129.33,
+          "end": 129.59,
+          "word": " two",
+          "probability": 0.9440905451774597
+        },
+        {
+          "start": 129.59,
+          "end": 129.77,
+          "word": " out.",
+          "probability": 0.6403583288192749
+        },
+        {
+          "start": 130.31,
+          "end": 130.91,
+          "word": " Two",
+          "probability": 0.21601098775863647
+        },
+        {
+          "start": 130.91,
+          "end": 131.21,
+          "word": " Charlie.",
+          "probability": 0.758077085018158
+        },
+        {
+          "start": 134.65,
+          "end": 134.71,
+          "word": " Two",
+          "probability": 0.6621240973472595
+        },
+        {
+          "start": 134.71,
+          "end": 134.81,
+          "word": " Charlie.",
+          "probability": 0.9869264960289001
+        },
+        {
+          "start": 134.81,
+          "end": 134.81,
+          "word": " Two",
+          "probability": 0.47395020723342896
+        },
+        {
+          "start": 134.81,
+          "end": 134.99,
+          "word": " Charlie.",
+          "probability": 0.9774226546287537
+        },
+        {
+          "start": 135.47,
+          "end": 135.65,
+          "word": " Two",
+          "probability": 0.32309839129447937
+        },
+        {
+          "start": 135.65,
+          "end": 135.91,
+          "word": " Charlie.",
+          "probability": 0.9708802103996277
+        }
+      ]
+    },
+    {
+      "start": 143.14,
+      "end": 290.61,
+      "text": "Rolls next. Shooter Dave's on deck.",
+      "words": [
+        {
+          "start": 143.14,
+          "end": 143.74,
+          "word": " Rolls",
+          "probability": 0.7031098157167435
+        },
+        {
+          "start": 143.74,
+          "end": 144.0,
+          "word": " next.",
+          "probability": 0.9198712110519409
+        },
+        {
+          "start": 146.49,
+          "end": 147.01,
+          "word": " Shooter",
+          "probability": 0.9675956964492798
+        },
+        {
+          "start": 147.01,
+          "end": 147.89,
+          "word": " Dave's",
+          "probability": 0.8173578679561615
+        },
+        {
+          "start": 287.34,
+          "end": 288.62,
+          "word": " on",
+          "probability": 0.6053770184516907
+        },
+        {
+          "start": 290.13,
+          "end": 290.61,
+          "word": " deck.",
+          "probability": 0.9755789041519165
+        }
+      ]
+    }
+  ]
+}
