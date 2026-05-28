@@ -68,14 +68,15 @@ class TestDetectPhrases:
         assert len(ends) == 1
         assert "hammer down and holster" in ends[0].matched_phrase
 
-    def test_holster_standalone_when_not_part_of_phrase(self) -> None:
-        """'holster' alone should match only if not consumed by a longer phrase."""
+    def test_holster_not_standalone(self) -> None:
+        """'holster' alone is too short and matches 'shooter'/'hole' —
+        it should only work as part of 'hammer down and holster'."""
         segments = [
             _seg(50.0, 51.0, "holster", words=[(50.0, 51.0, "holster")]),
         ]
         starts, ends = detect_phrases(segments)
-        assert len(ends) >= 1
-        assert ends[0].matched_phrase == "holster"
+        holster_standalone = [m for m in ends if m.matched_phrase == "holster"]
+        assert len(holster_standalone) == 0
 
     def test_no_cross_gap_match(self) -> None:
         """Words 30s apart should not form a phrase match."""
