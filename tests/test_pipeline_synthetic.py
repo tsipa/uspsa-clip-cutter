@@ -270,6 +270,28 @@ class TestReadyWithoutStandby:
         assert stages[0].complete is False
         assert "fallback" in stages[0].end_reason
 
+    def test_ready_plus_end_no_beep_is_confirmed(self) -> None:
+        """ready + end_command but no beep = confirmed stage with start_reason '*_no_beep'."""
+        anchors = [
+            Anchor(kind="ready",       abs_time=100.0, file_idx=0, file_offset=5.0,  text="are you ready", score=90, end_offset=6.0),
+            Anchor(kind="end_command", abs_time=130.0, file_idx=0, file_offset=35.0, text="hammer down",   score=85, end_offset=36.0),
+        ]
+        stages = _assemble_stages(anchors)
+        assert len(stages) == 1
+        assert stages[0].complete is True
+        assert "no_beep" in stages[0].start_reason
+
+    def test_standby_plus_end_no_beep_is_confirmed(self) -> None:
+        """standby + end_command but no beep = confirmed stage."""
+        anchors = [
+            Anchor(kind="standby",     abs_time=100.0, file_idx=0, file_offset=5.0,  text="stand by",    score=95, end_offset=6.0),
+            Anchor(kind="end_command", abs_time=130.0, file_idx=0, file_offset=35.0, text="hammer down", score=85, end_offset=36.0),
+        ]
+        stages = _assemble_stages(anchors)
+        assert len(stages) == 1
+        assert stages[0].complete is True
+        assert "no_beep" in stages[0].start_reason
+
     def test_beep_search_record_has_anchor_kind(self) -> None:
         """BeepSearchRecord should record anchor_kind='ready' when no standby."""
         from video_stage_cutter.pipeline import BeepSearchRecord

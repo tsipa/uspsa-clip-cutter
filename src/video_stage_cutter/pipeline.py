@@ -402,6 +402,58 @@ def _assemble_stages(anchors: list[Anchor], min_clip_length: float = 5.0) -> lis
         fallback_no_end.append(stage)
         used_beeps.add(bi)
 
+    # --- third pass: standby/ready without beep + end_command → confirmed ---
+    # If beep wasn't detected but we have a start phrase + end command,
+    # use the start phrase end as the stage start.
+    used_starts: set[int] = set()
+    start_indices = [i for i, a in enumerate(anchors) if a.kind in ("standby", "ready")]
+    for si in start_indices:
+        start_a = anchors[si]
+        # skip if this start is already associated with a confirmed stage
+        already_used = False
+        for stage in confirmed:
+            if stage.standby and abs(stage.standby.abs_time - start_a.abs_time) < 1.0:
+                already_used = True
+                break
+            if stage.ready and abs(stage.ready.abs_time - start_a.abs_time) < 1.0:
+                already_used = True
+                break
+        if already_used:
+            continue
+
+        end_idx = None
+        for j in range(si + 1, len(anchors)):
+            a = anchors[j]
+            if a.abs_time - start_a.abs_time > MAX_STAGE_SECONDS:
+                break
+            if a.kind == "end_command" and j not in used_ends:
+                end_idx = j
+                break
+
+        if end_idx is not None:
+            end_a = anchors[end_idx]
+            stage = Stage(end_command=end_a)
+            if start_a.kind == "standby":
+                stage.standby = start_a
+            else:
+                stage.ready = start_a
+            stage.clip_start = start_a.end_offset + (start_a.abs_time - start_a.file_offset)
+            stage.clip_end = end_a.abs_time + (end_a.end_offset - end_a.file_offset)
+            stage.start_reason = f"{start_a.kind}_no_beep"
+            stage.end_reason = f"matched:{end_a.text}"
+            stage.complete = True
+            for j in range(si + 1, end_idx):
+                if anchors[j].kind == "gunshot":
+                    stage.gunshots.append(anchors[j])
+            confirmed.append(stage)
+            used_starts.add(si)
+            used_ends.add(end_idx)
+            end_time = end_a.abs_time
+            for j, a in enumerate(anchors):
+                if a.kind == "end_command" and j not in used_ends and abs(a.abs_time - end_time) < 5.0:
+                    used_ends.add(j)
+            _log_stage(stage, len(confirmed), "CONFIRMED (no beep)")
+
     # --- third pass: orphan end_commands → fallback no-start ---
     # deduplicate orphan ends by time proximity: keep only the best-scoring
     # end_command within each 5s window
