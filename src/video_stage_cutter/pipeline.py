@@ -227,7 +227,7 @@ def _collect_anchors_for_file(
         beeps = detect_beeps(fi.wav_path, search_start, search_end)
 
         record = BeepSearchRecord(
-            standby_offset=sb.file_offset,
+            standby_offset=anchor.file_offset,
             search_start=search_start,
             search_end=search_end,
         )
@@ -256,11 +256,11 @@ def _collect_anchors_for_file(
                 text=f"timer_beep (energy={best.energy:.1f})",
                 score=best.confidence * 100,
             ))
-            log.info("  ANCHOR BEEP: %.3fs (energy=%.1f, confidence=%.3f, %.2fs after standby end)",
-                     best.timestamp, best.energy, best.confidence, best.timestamp - sb.end_offset)
+            log.info("  ANCHOR BEEP: %.3fs (energy=%.1f, confidence=%.3f, %.2fs after anchor end)",
+                     best.timestamp, best.energy, best.confidence, best.timestamp - anchor.end_offset)
         else:
             record.chosen_reason = "no_candidates"
-            log.warning("  No beep found around standby at %.2fs", sb.file_offset)
+            log.warning("  No beep found around %s at %.2fs", anchor.kind, anchor.file_offset)
 
         fi.beep_searches.append(record)
 
@@ -874,7 +874,7 @@ def _transcribe(
             "Are you ready? Stand by. Standby. "
             "If you are finished, unload and show clear. "
             "If clear, hammer down and holster. Hammer down. Holster. "
-            "Range is clear. Stage is clear."
+            "Range is clear."
         ),
         vad_filter=True,
     )

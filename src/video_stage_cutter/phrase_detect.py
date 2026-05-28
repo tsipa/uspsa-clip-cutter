@@ -33,7 +33,6 @@ END_PHRASES = [
     "hammer down holster",
     "hammer down",
     "range is clear",
-    "stage is clear",
 ]
 
 DEFAULT_THRESHOLD = 70
