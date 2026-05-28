@@ -251,31 +251,39 @@ def _collect_anchors_for_file(
         )
 
         if beeps:
-            best = max(beeps, key=lambda b: (b.confidence, b.energy))
-            log.info("  All beep candidates:")
+            best = max(beeps, key=lambda b: (b.tonality, b.band_energy))
+            log.info("  Accepted beep candidates:")
             for bc in beeps:
                 chosen = bc is best
-                marker = " <-- CHOSEN (highest confidence+energy)" if chosen else ""
-                log.info("    t=%.3fs energy=%.2f confidence=%.3f%s",
-                         bc.timestamp, bc.energy, bc.confidence, marker)
+                marker = " <-- CHOSEN" if chosen else ""
+                log.info("    t=%.3fs energy=%.1f tonality=%.3f bb_ratio=%.3f duration=%.0fms%s",
+                         bc.timestamp, bc.band_energy, bc.tonality, bc.broadband_ratio,
+                         bc.duration_ms, marker)
                 record.candidates.append({
                     "timestamp": bc.timestamp,
-                    "energy": bc.energy,
-                    "confidence": bc.confidence,
+                    "band_energy": bc.band_energy,
+                    "tonality": bc.tonality,
+                    "broadband_ratio": bc.broadband_ratio,
+                    "spectral_flatness": bc.spectral_flatness,
+                    "duration_ms": bc.duration_ms,
+                    "neighbors_1s": bc.neighbors_1s,
                     "chosen": chosen,
                 })
 
             record.chosen_timestamp = best.timestamp
-            record.chosen_reason = f"highest (confidence={best.confidence:.3f}, energy={best.energy:.1f})"
+            record.chosen_reason = (
+                f"best tonality={best.tonality:.3f} energy={best.band_energy:.1f} "
+                f"duration={best.duration_ms:.0f}ms"
+            )
 
             anchors.append(Anchor(
                 kind="beep", abs_time=epoch + best.timestamp, file_idx=file_idx,
                 file_offset=best.timestamp,
-                text=f"timer_beep (energy={best.energy:.1f})",
-                score=best.confidence * 100,
+                text=f"timer_beep (tonality={best.tonality:.2f} energy={best.band_energy:.0f} {best.duration_ms:.0f}ms)",
+                score=min(100.0, best.tonality * 200),
             ))
-            log.info("  ANCHOR BEEP: %.3fs (energy=%.1f, confidence=%.3f, %.2fs after anchor end)",
-                     best.timestamp, best.energy, best.confidence, best.timestamp - anchor.end_offset)
+            log.info("  ANCHOR BEEP: %.3fs (tonality=%.3f, energy=%.1f, %.2fs after anchor end)",
+                     best.timestamp, best.tonality, best.band_energy, best.timestamp - anchor.end_offset)
         else:
             record.chosen_reason = "no_candidates"
             log.warning("  No beep found around %s at %.2fs", anchor.kind, anchor.file_offset)

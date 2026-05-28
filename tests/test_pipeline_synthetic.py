@@ -122,7 +122,7 @@ class TestSyntheticBeepInStage:
             # search around where "stand by" ends (~7.5s)
             candidates = detect_beeps(wav_path, search_start=7.25, search_end=17.5)
             assert len(candidates) >= 1
-            best = max(candidates, key=lambda c: c.energy)
+            best = max(candidates, key=lambda c: c.band_energy)
             assert abs(best.timestamp - expected["beep_time"]) < 0.2, (
                 f"Beep at {best.timestamp}, expected ~{expected['beep_time']}"
             )

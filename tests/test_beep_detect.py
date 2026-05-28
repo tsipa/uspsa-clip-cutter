@@ -34,7 +34,7 @@ class TestDetectBeeps:
         try:
             candidates = detect_beeps(wav_path, search_start=2.0, search_end=5.0)
             assert len(candidates) >= 1
-            best = max(candidates, key=lambda c: c.energy)
+            best = max(candidates, key=lambda c: c.band_energy)
             assert abs(best.timestamp - 3.0) < 0.15, f"Beep at {best.timestamp}, expected ~3.0"
         finally:
             wav_path.unlink(missing_ok=True)
@@ -77,8 +77,8 @@ class TestDetectBeeps:
         try:
             candidates = detect_beeps(wav_path, search_start=0.5, search_end=6.0)
             assert len(candidates) >= 1
-            best_energy = max(candidates, key=lambda c: c.energy)
-            best_composite = max(candidates, key=lambda c: (c.confidence, c.energy))
+            best_energy = max(candidates, key=lambda c: c.band_energy)
+            best_composite = max(candidates, key=lambda c: (c.tonality, c.band_energy))
             # the strong beep should be at ~4.0s
             assert abs(best_energy.timestamp - 4.0) < 0.2, f"Best energy at {best_energy.timestamp}, expected ~4.0"
             assert abs(best_composite.timestamp - 4.0) < 0.2

@@ -1,4 +1,10 @@
-"""Audio event detection: timer beeps and gunshots."""
+"""Audio event detection: timer beeps and gunshots.
+
+Beep detection uses multiple spectral features to distinguish a timer beep
+(pure tone ~3000-4000 Hz, 80-500ms) from gunshots (broadband impulse <50ms)
+and background noise. All features are logged per candidate so thresholds
+can be tuned from real data.
+"""
 
 from __future__ import annotations
 
@@ -16,10 +22,14 @@ log = logging.getLogger(__name__)
 @dataclass
 class BeepCandidate:
     timestamp: float
-    energy: float
-    confidence: float
-    tonal_purity: float = 0.0
-    duration_ms: float = 0.0
+    band_energy: float
+    tonality: float         # peak_bin / sum_bins in beep band — pure tone ~0.3+
+    broadband_ratio: float  # energy_beep_band / energy_wide_band — beep ~0.3+, gunshot ~0.05
+    spectral_flatness: float  # geometric_mean / arithmetic_mean — noise ~1.0, tone ~0.0
+    duration_ms: float
+    neighbors_1s: int       # how many other candidates within ±1s (series = gunshots)
+    reject_reason: str = ""
+    accepted: bool = False
 
 
 @dataclass
@@ -43,18 +53,21 @@ def detect_beeps(
     search_end: float,
     freq_low: float = 2500.0,
     freq_high: float = 5000.0,
+    wide_freq_low: float = 300.0,
+    wide_freq_high: float = 8000.0,
     collapse_window: float = 0.3,
-    min_purity: float = 0.15,
-    min_duration_ms: float = 50.0,
-    max_duration_ms: float = 600.0,
+    min_tonality: float = 0.15,
+    min_broadband_ratio: float = 0.10,
+    max_spectral_flatness: float = 0.8,
+    min_duration_ms: float = 80.0,
+    max_duration_ms: float = 500.0,
+    max_neighbors_1s: int = 3,
 ) -> list[BeepCandidate]:
-    """Detect high-frequency tonal beeps between *search_start* and *search_end*.
+    """Detect high-frequency tonal beeps.
 
-    Filters out gunshots and broadband noise by checking:
-    - Tonal purity: ratio of energy in beep band vs total spectrum.
-      Beep ~0.3+, gunshot ~0.05.
-    - Duration: consecutive frames above threshold must be 50-600ms.
-      Beep ~100-300ms, gunshot <50ms.
+    All thresholds are configurable. Every candidate is logged with all
+    features regardless of accept/reject so thresholds can be tuned from
+    real data.
     """
     sample_rate, data = load_wav(wav_path)
 
@@ -77,99 +90,137 @@ def detect_beeps(
         segment, fs=sample_rate, nperseg=nperseg, noverlap=noverlap,
     )
 
-    band_mask = (freqs >= freq_low) & (freqs <= freq_high)
-    if not band_mask.any():
+    beep_band = (freqs >= freq_low) & (freqs <= freq_high)
+    wide_band = (freqs >= wide_freq_low) & (freqs <= wide_freq_high)
+
+    if not beep_band.any():
         log.warning("No frequency bins in %.0f-%.0f Hz range", freq_low, freq_high)
         return []
 
-    band_energy = Sxx[band_mask, :].mean(axis=0)
-    total_energy = Sxx.mean(axis=0)
+    beep_energy = Sxx[beep_band, :].mean(axis=0)
+    wide_energy = Sxx[wide_band, :].mean(axis=0) if wide_band.any() else beep_energy
 
-    if band_energy.max() == 0:
+    if beep_energy.max() == 0:
         return []
 
-    median_energy = float(np.median(band_energy))
-    std_energy = float(np.std(band_energy))
+    median_energy = float(np.median(beep_energy))
+    std_energy = float(np.std(beep_energy))
     threshold = median_energy + 3.0 * std_energy
 
-    # time step between spectrogram frames
     dt = float(times[1] - times[0]) if len(times) > 1 else 0.032
 
-    # find contiguous runs of above-threshold frames
-    above = band_energy >= threshold
-    candidates: list[BeepCandidate] = []
+    # find contiguous runs above threshold
+    above = beep_energy >= threshold
+    raw_runs: list[tuple[int, int, int]] = []  # (run_start, run_end, peak_idx)
     i = 0
     while i < len(above):
         if above[i]:
             run_start = i
             peak_idx = i
-            peak_energy = band_energy[i]
+            peak_val = beep_energy[i]
             while i < len(above) and above[i]:
-                if band_energy[i] > peak_energy:
-                    peak_energy = band_energy[i]
+                if beep_energy[i] > peak_val:
+                    peak_val = beep_energy[i]
                     peak_idx = i
                 i += 1
-            run_end = i
-
-            run_duration_ms = (run_end - run_start) * dt * 1000.0
-            purity = float(band_energy[peak_idx] / (total_energy[peak_idx] + 1e-9))
-            abs_time = search_start + float(times[peak_idx])
-            confidence = min(1.0, float(peak_energy / (median_energy + std_energy + 1e-9)))
-
-            candidates.append(BeepCandidate(
-                timestamp=abs_time,
-                energy=float(peak_energy),
-                confidence=confidence,
-                tonal_purity=purity,
-                duration_ms=run_duration_ms,
-            ))
+            raw_runs.append((run_start, i, peak_idx))
         else:
             i += 1
 
-    # log all candidates before filtering
+    # compute features for each run
+    candidates: list[BeepCandidate] = []
+    for run_start, run_end, peak_idx in raw_runs:
+        abs_time = search_start + float(times[peak_idx])
+        duration_ms = (run_end - run_start) * dt * 1000.0
+
+        # tonality: peak FFT bin / sum of bins in beep band at peak frame
+        beep_spectrum = Sxx[beep_band, peak_idx]
+        tonality = float(beep_spectrum.max() / (beep_spectrum.sum() + 1e-9))
+
+        # broadband ratio: beep band energy / wide band energy
+        bb_ratio = float(beep_energy[peak_idx] / (wide_energy[peak_idx] + 1e-9))
+
+        # spectral flatness at peak frame (full spectrum)
+        full_spectrum = Sxx[:, peak_idx]
+        full_spectrum_pos = full_spectrum[full_spectrum > 0]
+        if len(full_spectrum_pos) > 0:
+            geo_mean = float(np.exp(np.mean(np.log(full_spectrum_pos + 1e-20))))
+            arith_mean = float(np.mean(full_spectrum_pos))
+            flatness = geo_mean / (arith_mean + 1e-9)
+        else:
+            flatness = 1.0
+
+        candidates.append(BeepCandidate(
+            timestamp=abs_time,
+            band_energy=float(beep_energy[peak_idx]),
+            tonality=tonality,
+            broadband_ratio=bb_ratio,
+            spectral_flatness=flatness,
+            duration_ms=duration_ms,
+            neighbors_1s=0,
+        ))
+
+    # count neighbors within ±1s (series detection)
+    for i, c in enumerate(candidates):
+        count = 0
+        for j, other in enumerate(candidates):
+            if i != j and abs(c.timestamp - other.timestamp) <= 1.0:
+                count += 1
+        c.neighbors_1s = count
+
+    # log ALL candidates with features
     log.info(
-        "Beep detection: searched %.2f-%.2fs, threshold=%.2f, %d raw candidates",
+        "Beep detection: searched %.2f-%.2fs, threshold=%.1f, %d raw candidates",
         search_start, search_end, threshold, len(candidates),
     )
     for c in candidates:
         log.info(
-            "  RAW  t=%.3fs energy=%.1f purity=%.3f duration=%.0fms confidence=%.3f",
-            c.timestamp, c.energy, c.tonal_purity, c.duration_ms, c.confidence,
+            "  RAW  t=%.3fs energy=%.1f tonality=%.3f bb_ratio=%.3f flatness=%.3f "
+            "duration=%.0fms neighbors=%d",
+            c.timestamp, c.band_energy, c.tonality, c.broadband_ratio,
+            c.spectral_flatness, c.duration_ms, c.neighbors_1s,
         )
 
-    # filter by tonal purity and duration
-    filtered = []
+    # apply filters — log reject reason for each
     for c in candidates:
-        if c.tonal_purity < min_purity:
-            log.debug("  REJECTED t=%.3fs: purity %.3f < %.3f (likely gunshot/noise)",
-                       c.timestamp, c.tonal_purity, min_purity)
-            continue
+        reasons = []
         if c.duration_ms < min_duration_ms:
-            log.debug("  REJECTED t=%.3fs: duration %.0fms < %.0fms (too short, likely gunshot)",
-                       c.timestamp, c.duration_ms, min_duration_ms)
-            continue
+            reasons.append(f"too_short({c.duration_ms:.0f}ms<{min_duration_ms:.0f}ms)")
         if c.duration_ms > max_duration_ms:
-            log.debug("  REJECTED t=%.3fs: duration %.0fms > %.0fms (too long)",
-                       c.timestamp, c.duration_ms, max_duration_ms)
-            continue
-        filtered.append(c)
+            reasons.append(f"too_long({c.duration_ms:.0f}ms>{max_duration_ms:.0f}ms)")
+        if c.tonality < min_tonality:
+            reasons.append(f"low_tonality({c.tonality:.3f}<{min_tonality})")
+        if c.broadband_ratio < min_broadband_ratio:
+            reasons.append(f"broadband({c.broadband_ratio:.3f}<{min_broadband_ratio})")
+        if c.spectral_flatness > max_spectral_flatness:
+            reasons.append(f"flat_spectrum({c.spectral_flatness:.3f}>{max_spectral_flatness})")
+        if c.neighbors_1s > max_neighbors_1s:
+            reasons.append(f"series({c.neighbors_1s}neighbors>{max_neighbors_1s})")
 
-    filtered = _collapse_beeps(filtered, collapse_window)
-    filtered.sort(key=lambda c: c.timestamp)
+        if reasons:
+            c.reject_reason = ",".join(reasons)
+            c.accepted = False
+        else:
+            c.accepted = True
 
-    log.info(
-        "  After filtering: %d/%d candidates (min_purity=%.2f, duration=%d-%dms)",
-        len(filtered), len(candidates), min_purity, int(min_duration_ms), int(max_duration_ms),
-    )
-    for c in filtered:
-        log.info(
-            "  BEEP t=%.3fs energy=%.1f purity=%.3f duration=%.0fms",
-            c.timestamp, c.energy, c.tonal_purity, c.duration_ms,
-        )
-    if not filtered:
+    accepted = [c for c in candidates if c.accepted]
+    rejected = [c for c in candidates if not c.accepted]
+
+    for c in rejected:
+        log.info("  REJECT t=%.3fs: %s", c.timestamp, c.reject_reason)
+    for c in accepted:
+        log.info("  ACCEPT t=%.3fs energy=%.1f tonality=%.3f bb_ratio=%.3f duration=%.0fms",
+                 c.timestamp, c.band_energy, c.tonality, c.broadband_ratio, c.duration_ms)
+
+    accepted = _collapse_beeps(accepted, collapse_window)
+    accepted.sort(key=lambda c: c.timestamp)
+
+    log.info("  Result: %d accepted / %d rejected / %d total",
+             len(accepted), len(rejected), len(candidates))
+    if not accepted:
         log.warning("  No beep survived filtering in window %.2f-%.2fs", search_start, search_end)
 
-    return filtered
+    return accepted
 
 
 def detect_gunshots(
@@ -192,7 +243,7 @@ def detect_gunshots(
 
     segment = np.abs(data[start_sample:end_sample])
 
-    window_samples = int(0.01 * sample_rate)  # 10ms envelope
+    window_samples = int(0.01 * sample_rate)
     if window_samples < 1 or len(segment) < window_samples:
         return []
 
@@ -242,7 +293,7 @@ def _collapse_beeps(candidates: list[BeepCandidate], window: float) -> list[Beep
     merged: list[BeepCandidate] = [candidates[0]]
     for c in candidates[1:]:
         if c.timestamp - merged[-1].timestamp < window:
-            if c.energy > merged[-1].energy:
+            if c.band_energy > merged[-1].band_energy:
                 merged[-1] = c
         else:
             merged.append(c)
