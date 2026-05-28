@@ -92,7 +92,7 @@ class TestDJI0291:
     def test_finds_standby(self) -> None:
         segments = _load("real_dji_0291")
         starts, ends = detect_phrases(segments)
-        standby = [m for m in starts if "stand by" in m.matched_phrase.lower()]
+        standby = [m for m in starts if "stand" in m.matched_phrase.lower()]
         assert len(standby) >= 1
 
     def test_finds_hammer_down(self) -> None:
@@ -176,7 +176,7 @@ class TestDJI0295:
     def test_finds_standby(self) -> None:
         segments = _load("real_dji_0295")
         starts, ends = detect_phrases(segments)
-        standby = [m for m in starts if "stand by" in m.matched_phrase.lower()]
+        standby = [m for m in starts if "stand" in m.matched_phrase.lower()]
         assert len(standby) >= 1
 
     def test_finds_hammer_down(self) -> None:

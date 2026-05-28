@@ -144,7 +144,7 @@ def _find_raw_matches(
     results: list[_RawMatch] = []
     phrase_word_count = len(phrase.split())
 
-    for window_size in range(max(1, phrase_word_count - 1), phrase_word_count + 3):
+    for window_size in range(phrase_word_count, phrase_word_count + 3):
         if window_size > len(word_strings):
             continue
         for i in range(len(word_strings) - window_size + 1):
