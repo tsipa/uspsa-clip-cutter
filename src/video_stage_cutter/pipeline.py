@@ -250,26 +250,24 @@ def _collect_anchors_for_file(
             search_end=search_end,
         )
 
-        if beeps:
-            best = max(beeps, key=lambda b: (b.tonality, b.band_energy))
-            log.info("  Accepted beep candidates:")
-            for bc in beeps:
-                chosen = bc is best
-                marker = " <-- CHOSEN" if chosen else ""
-                log.info("    t=%.3fs energy=%.1f tonality=%.3f bb_ratio=%.3f duration=%.0fms%s",
-                         bc.timestamp, bc.band_energy, bc.tonality, bc.broadband_ratio,
-                         bc.duration_ms, marker)
-                record.candidates.append({
-                    "timestamp": bc.timestamp,
-                    "band_energy": bc.band_energy,
-                    "tonality": bc.tonality,
-                    "broadband_ratio": bc.broadband_ratio,
-                    "spectral_flatness": bc.spectral_flatness,
-                    "duration_ms": bc.duration_ms,
-                    "neighbors_1s": bc.neighbors_1s,
-                    "chosen": chosen,
-                })
+        # beeps contains ALL candidates (accepted + rejected) for debug
+        # save all to debug record
+        for bc in beeps:
+            record.candidates.append({
+                "timestamp": bc.timestamp,
+                "band_energy": bc.band_energy,
+                "tonality": bc.tonality,
+                "broadband_ratio": bc.broadband_ratio,
+                "spectral_flatness": bc.spectral_flatness,
+                "duration_ms": bc.duration_ms,
+                "neighbors_1s": bc.neighbors_1s,
+                "accepted": bc.accepted,
+                "reject_reason": bc.reject_reason,
+            })
 
+        accepted = [b for b in beeps if b.accepted]
+        if accepted:
+            best = max(accepted, key=lambda b: (b.tonality, b.band_energy))
             record.chosen_timestamp = best.timestamp
             record.chosen_reason = (
                 f"best tonality={best.tonality:.3f} energy={best.band_energy:.1f} "
@@ -285,8 +283,9 @@ def _collect_anchors_for_file(
             log.info("  ANCHOR BEEP: %.3fs (tonality=%.3f, energy=%.1f, %.2fs after anchor end)",
                      best.timestamp, best.tonality, best.band_energy, best.timestamp - anchor.end_offset)
         else:
-            record.chosen_reason = "no_candidates"
-            log.warning("  No beep found around %s at %.2fs", anchor.kind, anchor.file_offset)
+            record.chosen_reason = f"no_accepted ({len(beeps)} raw rejected)"
+            log.warning("  No beep accepted around %s at %.2fs (%d raw candidates all rejected)",
+                        anchor.kind, anchor.file_offset, len(beeps))
 
         fi.beep_searches.append(record)
 

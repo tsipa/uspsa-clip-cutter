@@ -203,24 +203,23 @@ def detect_beeps(
         else:
             c.accepted = True
 
+    for c in candidates:
+        if c.accepted:
+            log.info("  ACCEPT t=%.3fs energy=%.1f tonality=%.3f bb_ratio=%.3f duration=%.0fms",
+                     c.timestamp, c.band_energy, c.tonality, c.broadband_ratio, c.duration_ms)
+        else:
+            log.info("  REJECT t=%.3fs: %s", c.timestamp, c.reject_reason)
+
     accepted = [c for c in candidates if c.accepted]
-    rejected = [c for c in candidates if not c.accepted]
-
-    for c in rejected:
-        log.info("  REJECT t=%.3fs: %s", c.timestamp, c.reject_reason)
-    for c in accepted:
-        log.info("  ACCEPT t=%.3fs energy=%.1f tonality=%.3f bb_ratio=%.3f duration=%.0fms",
-                 c.timestamp, c.band_energy, c.tonality, c.broadband_ratio, c.duration_ms)
-
     accepted = _collapse_beeps(accepted, collapse_window)
-    accepted.sort(key=lambda c: c.timestamp)
 
     log.info("  Result: %d accepted / %d rejected / %d total",
-             len(accepted), len(rejected), len(candidates))
+             len(accepted), len(candidates) - len(accepted), len(candidates))
     if not accepted:
         log.warning("  No beep survived filtering in window %.2f-%.2fs", search_start, search_end)
 
-    return accepted
+    # return ALL candidates (with accepted/reject_reason set) for debug logging
+    return candidates
 
 
 def detect_gunshots(
