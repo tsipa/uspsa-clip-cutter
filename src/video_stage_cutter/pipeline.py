@@ -454,7 +454,44 @@ def _assemble_stages(anchors: list[Anchor], min_clip_length: float = 5.0) -> lis
                     used_ends.add(j)
             _log_stage(stage, len(confirmed), "CONFIRMED (no beep)")
 
-    # --- third pass: orphan end_commands → fallback no-start ---
+    # --- fourth pass: start without beep or end → fallback 3min from start ---
+    fallback_start_only: list[Stage] = []
+    for si in start_indices:
+        if si in used_starts:
+            continue
+        start_a = anchors[si]
+        already_used = False
+        for stage in confirmed + fallback_no_end:
+            if stage.standby and abs(stage.standby.abs_time - start_a.abs_time) < 1.0:
+                already_used = True
+                break
+            if stage.ready and abs(stage.ready.abs_time - start_a.abs_time) < 1.0:
+                already_used = True
+                break
+            if stage.beep and abs(stage.beep.abs_time - start_a.abs_time) < 30.0:
+                already_used = True
+                break
+        if already_used:
+            continue
+
+        stage = Stage()
+        if start_a.kind == "standby":
+            stage.standby = start_a
+        else:
+            stage.ready = start_a
+        epoch_offset = start_a.abs_time - start_a.file_offset
+        stage.clip_start = epoch_offset + start_a.end_offset
+        stage.clip_end = stage.clip_start + FALLBACK_DURATION
+        stage.start_reason = f"{start_a.kind}_no_beep"
+        stage.end_reason = "fallback_3min_no_end"
+        stage.complete = False
+        for ga in anchors:
+            if ga.kind == "gunshot" and stage.clip_start <= ga.abs_time <= stage.clip_end:
+                stage.gunshots.append(ga)
+        fallback_start_only.append(stage)
+        used_starts.add(si)
+
+    # --- fifth pass: orphan end_commands → fallback no-start ---
     # deduplicate orphan ends by time proximity: keep only the best-scoring
     # end_command within each 5s window
     fallback_no_start: list[Stage] = []
@@ -489,7 +526,7 @@ def _assemble_stages(anchors: list[Anchor], min_clip_length: float = 5.0) -> lis
     # --- trim fallbacks against confirmed intervals ---
     confirmed_intervals = [(s.clip_start, s.clip_end) for s in confirmed]
 
-    all_fallbacks = fallback_no_end + fallback_no_start
+    all_fallbacks = fallback_no_end + fallback_start_only + fallback_no_start
     trimmed_fallbacks: list[Stage] = []
 
     for stage in all_fallbacks:
