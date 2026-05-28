@@ -30,6 +30,7 @@ END_PHRASES = [
     "if clear hammer down and holster",
     "if clear hammer down",
     "hammer down and holster",
+    "hammer down holster",
     "hammer down",
     "range is clear",
     "stage is clear",
