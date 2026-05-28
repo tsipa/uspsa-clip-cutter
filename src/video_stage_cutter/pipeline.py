@@ -43,7 +43,7 @@ FALLBACK_DURATION = 180.0
 
 @dataclass
 class ProcessingConfig:
-    model: str = "small"
+    model: str = "large-v3"
     device: str = "cpu"
     compute_type: str = "int8"
     accurate_cut: bool = True

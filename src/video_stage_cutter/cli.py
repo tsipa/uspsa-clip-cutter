@@ -23,7 +23,7 @@ app = typer.Typer(
 def run(
     input_dir: Path = typer.Argument(..., help="Folder containing .mp4/.mov/.m4v source videos."),
     output_dir: Path = typer.Argument(..., help="Folder where cut clips will be saved."),
-    model: str = typer.Option("small", help="Whisper model name (tiny, base, small, medium, large-v3)."),
+    model: str = typer.Option("large-v3", help="Whisper model name (tiny, base, small, medium, large-v3)."),
     device: str = typer.Option("cpu", help="Device for Whisper inference (cpu or cuda)."),
     compute_type: str = typer.Option("int8", help="Compute type (int8, float16, float32)."),
     accurate_cut: bool = typer.Option(True, "--accurate-cut/--fast-cut", help="Re-encode for frame-accurate cuts, or stream-copy for speed."),
