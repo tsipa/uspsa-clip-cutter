@@ -1,6 +1,6 @@
 """Tests for phrase_detect module."""
 
-from video_stage_cutter.phrase_detect import PhraseMatch, _deduplicate, detect_phrases
+from video_stage_cutter.phrase_detect import PhraseMatch, detect_phrases
 from video_stage_cutter.transcribe import TranscriptSegment, WordInfo
 
 
@@ -55,21 +55,39 @@ class TestDetectPhrases:
         starts, _ends = detect_phrases(segments)
         assert len(starts) >= 1
 
-
-class TestDeduplicate:
-    def test_keeps_best_in_window(self) -> None:
-        matches = [
-            PhraseMatch(start=10.0, end=11.0, text="stand by", score=80, matched_phrase="stand by", role="start"),
-            PhraseMatch(start=10.1, end=11.1, text="stand bye", score=90, matched_phrase="stand by", role="start"),
+    def test_longest_match_wins(self) -> None:
+        """'hammer down and holster' should match as one phrase, not as
+        'hammer down' + standalone 'holster'."""
+        segments = [
+            _seg(30.0, 35.0, "hammer down and holster", words=[
+                (30.0, 30.5, "hammer"), (30.5, 31.0, "down"),
+                (31.0, 31.3, "and"), (31.3, 32.0, "holster"),
+            ]),
         ]
-        result = _deduplicate(matches, time_tolerance=0.5)
-        assert len(result) == 1
-        assert result[0].score == 90
+        starts, ends = detect_phrases(segments)
+        assert len(ends) == 1
+        assert "hammer down and holster" in ends[0].matched_phrase
 
-    def test_keeps_separate_windows(self) -> None:
-        matches = [
-            PhraseMatch(start=10.0, end=11.0, text="stand by", score=80, matched_phrase="stand by", role="start"),
-            PhraseMatch(start=20.0, end=21.0, text="stand by", score=85, matched_phrase="stand by", role="start"),
+    def test_holster_standalone_when_not_part_of_phrase(self) -> None:
+        """'holster' alone should match only if not consumed by a longer phrase."""
+        segments = [
+            _seg(50.0, 51.0, "holster", words=[(50.0, 51.0, "holster")]),
         ]
-        result = _deduplicate(matches, time_tolerance=0.5)
-        assert len(result) == 2
+        starts, ends = detect_phrases(segments)
+        assert len(ends) >= 1
+        assert ends[0].matched_phrase == "holster"
+
+    def test_no_cross_gap_match(self) -> None:
+        """Words 30s apart should not form a phrase match."""
+        segments = [
+            _seg(10.0, 50.0, "by hammer down", words=[
+                (10.0, 10.5, "by"),
+                (40.0, 40.5, "hammer"),
+                (40.5, 41.0, "down"),
+            ]),
+        ]
+        starts, ends = detect_phrases(segments)
+        # "by hammer down" should NOT match because 30s gap between "by" and "hammer"
+        # but "hammer down" alone (no gap) should match
+        for m in ends:
+            assert m.start >= 40.0, f"Cross-gap match at {m.start}"
