@@ -37,7 +37,7 @@ def run(
     dry_run: bool = typer.Option(False, help="Detect boundaries and write manifest/debug, but do not cut video."),
     phrase_threshold: float = typer.Option(70.0, help="Fuzzy matching threshold for phrase detection (0-100). Lower = more lenient."),
     beep_search_before: float = typer.Option(0.25, help="Seconds before standby end to start searching for the beep."),
-    beep_search_after: float = typer.Option(5.0, help="Seconds after standby end to stop searching for the beep."),
+    beep_search_after: float = typer.Option(10.0, help="Seconds after standby end to stop searching for the beep."),
     verbose: bool = typer.Option(False, "-v", "--verbose", help="Enable debug logging."),
 ) -> None:
     """Scan INPUT_DIR for videos, detect stage boundaries, and cut clips into OUTPUT_DIR."""

@@ -54,7 +54,7 @@ class ProcessingConfig:
     dry_run: bool = False
     phrase_threshold: float = 70.0
     beep_search_before: float = 0.25
-    beep_search_after: float = 5.0
+    beep_search_after: float = 10.0
 
 
 # ---------------------------------------------------------------------------

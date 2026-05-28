@@ -220,7 +220,7 @@ In the debug directory (`<output_dir>/debug/` by default, or the path you pass w
 | `--dry-run` | off | Run detection and write manifest/debug files, but do not cut any video. |
 | `--phrase-threshold` | `70.0` | Fuzzy matching threshold for phrase detection (0-100). Lower = more lenient, higher = stricter. |
 | `--beep-search-before` | `0.25` | Seconds before "stand by" end to start searching for the timer beep. |
-| `--beep-search-after` | `5.0` | Seconds after "stand by" end to stop searching for the timer beep. |
+| `--beep-search-after` | `10.0` | Seconds after "stand by" end to stop searching for the timer beep. |
 | `-v` / `--verbose` | off | Enable debug-level logging for detailed output. |
 
 ---
@@ -300,7 +300,7 @@ Check the debug JSON files for detailed detection information including all cand
 - **Increase `--end-padding`** if your clips cut off too early after "hammer down and holster". The default is 2 seconds.
 - **Keep debug files when tuning.** The transcript and detection JSON files show exactly what the tool detected and why it chose specific boundaries. Use `--keep-wav` to also preserve the audio for manual inspection.
 - **Check confidence scores in manifest.csv.** Low confidence scores indicate uncertain detections.
-- **Adjust beep search window** with `--beep-search-before` and `--beep-search-after` if the beep is detected at the wrong time. The default window is -0.25s to +5.0s around the end of "stand by".
+- **Adjust beep search window** with `--beep-search-before` and `--beep-search-after` if the beep is detected at the wrong time. The default window is -0.25s to +10.0s around the end of "stand by".
 - **Lower `--phrase-threshold`** (default 70) if speech recognition hears commands but fuzzy matching rejects them due to noise-garbled transcription.
 
 ---
