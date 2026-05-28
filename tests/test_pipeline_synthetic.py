@@ -16,12 +16,14 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 from scipy.io import wavfile
 
-from video_stage_cutter.beep_detect import detect_beeps, detect_gunshots
+from video_stage_cutter.beep_detect import analyze_beep_candidates, detect_gunshots
 from video_stage_cutter.pipeline import (
     Anchor,
+    FileInfo,
     ProcessingConfig,
     Stage,
     _assemble_stages,
+    _collect_audio_anchors_for_file,
     _subtract_intervals,
     _trim_fallback,
 )
@@ -120,7 +122,7 @@ class TestSyntheticBeepInStage:
         wav_path, expected = build_stage_audio()
         try:
             # search around where "stand by" ends (~7.5s)
-            candidates = detect_beeps(wav_path, search_start=7.25, search_end=17.5)
+            candidates = analyze_beep_candidates(wav_path, search_start=7.25, search_end=17.5)
             assert len(candidates) >= 1
             best = max(candidates, key=lambda c: c.band_energy)
             assert abs(best.timestamp - expected["beep_time"]) < 0.2, (
@@ -519,3 +521,67 @@ class TestFallbackOverlapTrimming:
             for fb in fallbacks:
                 # fallback must not overlap confirmed stage
                 assert fb.clip_start >= 46.0 or fb.clip_end <= 10.0
+
+
+class TestPhase1CAudioAnchors:
+    """Tests for _collect_audio_anchors_for_file (Phase 1C)."""
+
+    def test_returns_list_not_tuple(self) -> None:
+        """_collect_audio_anchors_for_file must return a list, not a tuple."""
+        wav_path = _make_wav(_noise(3.0))
+        fi = FileInfo(
+            path=Path("/fake/video.mp4"),
+            wav_path=wav_path,
+            duration=3.0,
+            creation_epoch=0.0,
+            creation_str="2024-01-01_00-00-00",
+            creation_iso="2024-01-01T00:00:00Z",
+        )
+        try:
+            result = _collect_audio_anchors_for_file(fi, 0, ProcessingConfig(), [])
+            assert isinstance(result, list), f"Expected list, got {type(result)}"
+        finally:
+            wav_path.unlink(missing_ok=True)
+
+    def test_rejected_beep_candidates_do_not_create_anchor(self) -> None:
+        """Broadband gunshot-like impulse in beep window must not create a beep anchor."""
+        sr = 16000
+        # noise + broadband spike at 1.5s (gunshot, not tonal beep)
+        audio = _noise(3.0, amplitude=300)
+        spike_start = int(1.5 * sr)
+        audio[spike_start:spike_start + 100] = 25000.0  # short broadband impulse
+
+        wav_path = _make_wav(audio)
+        fi = FileInfo(
+            path=Path("/fake/video.mp4"),
+            wav_path=wav_path,
+            duration=3.0,
+            creation_epoch=0.0,
+            creation_str="2024-01-01_00-00-00",
+            creation_iso="2024-01-01T00:00:00Z",
+        )
+        # standby anchor at 0.5s so beep search triggers
+        phrase_anchors = [
+            Anchor(kind="standby", abs_time=0.5, file_idx=0, file_offset=0.5,
+                   text="stand by", score=80, end_offset=1.0),
+        ]
+        try:
+            result = _collect_audio_anchors_for_file(fi, 0, ProcessingConfig(), phrase_anchors)
+            beep_anchors = [a for a in result if a.kind == "beep"]
+            assert len(beep_anchors) == 0, (
+                f"Broadband impulse should not create beep anchor, got {beep_anchors}"
+            )
+        finally:
+            wav_path.unlink(missing_ok=True)
+
+    def test_standby_with_high_score_survives_confidence_filter(self) -> None:
+        """'stand by' with high pattern score should survive MIN_CONFIDENCE even
+        without beep, end, or gunshots."""
+        anchors = [
+            Anchor(kind="standby", abs_time=100.0, file_idx=0, file_offset=5.0,
+                   text="stand by(100)", score=80, end_offset=6.0),
+        ]
+        stages = _assemble_stages(anchors)
+        assert len(stages) >= 1, (
+            "stand by with score=80 should survive confidence filter"
+        )

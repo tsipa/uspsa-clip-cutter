@@ -7,7 +7,7 @@ import logging
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-from video_stage_cutter.beep_detect import detect_beeps, detect_gunshots
+from video_stage_cutter.beep_detect import analyze_beep_candidates, detect_gunshots
 from video_stage_cutter.cutter import cut_clip
 from video_stage_cutter.ffmpeg_utils import (
     concat_and_cut,
@@ -300,7 +300,7 @@ def _collect_audio_anchors_for_file(
         log.info("  Searching beep around %s at %.2fs, window %.2f-%.2fs",
                  anchor.kind, anchor.file_offset, search_start, search_end)
 
-        beeps = detect_beeps(fi.wav_path, search_start, search_end)
+        beeps = analyze_beep_candidates(fi.wav_path, search_start, search_end)
 
         record = BeepSearchRecord(
             anchor_offset=anchor.file_offset,
@@ -320,13 +320,14 @@ def _collect_audio_anchors_for_file(
                 "spectral_flatness": bc.spectral_flatness,
                 "duration_ms": bc.duration_ms,
                 "neighbors_1s": bc.neighbors_1s,
+                "composite_score": bc.composite_score,
                 "accepted": bc.accepted,
                 "reject_reason": bc.reject_reason,
             })
 
         accepted = [b for b in beeps if b.accepted]
         if accepted:
-            best = max(accepted, key=lambda b: (b.tonality, b.band_energy))
+            best = max(accepted, key=lambda b: b.composite_score)
             record.chosen_timestamp = best.timestamp
             record.chosen_reason = (
                 f"best tonality={best.tonality:.3f} energy={best.band_energy:.1f} "

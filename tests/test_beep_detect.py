@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 from scipy.io import wavfile
 
-from video_stage_cutter.beep_detect import detect_beeps, detect_gunshots
+from video_stage_cutter.beep_detect import analyze_beep_candidates, detect_gunshots
 
 
 def _make_wav(samples: np.ndarray, sample_rate: int = 16000) -> Path:
@@ -32,7 +32,7 @@ class TestDetectBeeps:
         wav_path = _make_wav(audio, sr)
 
         try:
-            candidates = detect_beeps(wav_path, search_start=2.0, search_end=5.0)
+            candidates = analyze_beep_candidates(wav_path, search_start=2.0, search_end=5.0)
             assert len(candidates) >= 1
             best = max(candidates, key=lambda c: c.band_energy)
             assert abs(best.timestamp - 3.0) < 0.15, f"Beep at {best.timestamp}, expected ~3.0"
@@ -45,7 +45,7 @@ class TestDetectBeeps:
         wav_path = _make_wav(silence, sr)
 
         try:
-            candidates = detect_beeps(wav_path, search_start=0.0, search_end=3.0)
+            candidates = analyze_beep_candidates(wav_path, search_start=0.0, search_end=3.0)
             assert candidates == []
         finally:
             wav_path.unlink(missing_ok=True)
@@ -56,7 +56,7 @@ class TestDetectBeeps:
         wav_path = _make_wav(low_tone, sr)
 
         try:
-            candidates = detect_beeps(wav_path, search_start=0.0, search_end=3.0)
+            candidates = analyze_beep_candidates(wav_path, search_start=0.0, search_end=3.0)
             assert candidates == []
         finally:
             wav_path.unlink(missing_ok=True)
@@ -75,10 +75,10 @@ class TestDetectBeeps:
         wav_path = _make_wav(audio, sr)
 
         try:
-            candidates = detect_beeps(wav_path, search_start=0.5, search_end=6.0)
+            candidates = analyze_beep_candidates(wav_path, search_start=0.5, search_end=6.0)
             assert len(candidates) >= 1
             best_energy = max(candidates, key=lambda c: c.band_energy)
-            best_composite = max(candidates, key=lambda c: (c.tonality, c.band_energy))
+            best_composite = max(candidates, key=lambda c: c.composite_score)
             # the strong beep should be at ~4.0s
             assert abs(best_energy.timestamp - 4.0) < 0.2, f"Best energy at {best_energy.timestamp}, expected ~4.0"
             assert abs(best_composite.timestamp - 4.0) < 0.2

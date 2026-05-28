@@ -28,6 +28,7 @@ class BeepCandidate:
     spectral_flatness: float  # geometric_mean / arithmetic_mean — noise ~1.0, tone ~0.0
     duration_ms: float
     neighbors_1s: int       # how many other candidates within ±1s (series = gunshots)
+    composite_score: float = 0.0
     reject_reason: str = ""
     accepted: bool = False
 
@@ -47,7 +48,7 @@ def load_wav(wav_path: Path) -> tuple[int, np.ndarray]:
     return sample_rate, data.astype(np.float32)
 
 
-def detect_beeps(
+def analyze_beep_candidates(
     wav_path: Path,
     search_start: float,
     search_end: float,
@@ -168,6 +169,18 @@ def detect_beeps(
                 count += 1
         c.neighbors_1s = count
 
+    # compute composite score for ranking
+    max_energy = max((c.band_energy for c in candidates), default=1.0)
+    for c in candidates:
+        norm_energy = c.band_energy / (max_energy + 1e-9)
+        dur_score = min(1.0, c.duration_ms / 200.0) if c.duration_ms <= 500 else 0.5
+        c.composite_score = (
+            0.45 * norm_energy
+            + 0.35 * c.tonality
+            + 0.15 * c.broadband_ratio
+            + 0.05 * dur_score
+        )
+
     # log ALL candidates with features
     log.info(
         "Beep detection: searched %.2f-%.2fs, threshold=%.1f, %d raw candidates",
@@ -176,9 +189,9 @@ def detect_beeps(
     for c in candidates:
         log.info(
             "  RAW  t=%.3fs energy=%.1f tonality=%.3f bb_ratio=%.3f flatness=%.3f "
-            "duration=%.0fms neighbors=%d",
+            "duration=%.0fms neighbors=%d score=%.3f",
             c.timestamp, c.band_energy, c.tonality, c.broadband_ratio,
-            c.spectral_flatness, c.duration_ms, c.neighbors_1s,
+            c.spectral_flatness, c.duration_ms, c.neighbors_1s, c.composite_score,
         )
 
     # apply filters — log reject reason for each
