@@ -49,8 +49,8 @@ class ProcessingConfig:
     accurate_cut: bool = True
     keep_wav: bool = False
     debug_dir: Path | None = None
-    start_padding: float = 0.0
-    end_padding: float = 2.0
+    start_padding: float = 20.0
+    end_padding: float = 20.0
     min_clip_length: float = 5.0
     max_clip_length: float = 600.0
     overwrite: bool = False
@@ -203,14 +203,26 @@ def _collect_anchors_for_file(
         log.info("  ANCHOR END_COMMAND: %.2fs '%s' (matched '%s', score=%.0f)",
                  m.start, m.text, m.matched_phrase, m.score)
 
-    # --- beep detection: search around each standby ---
+    # --- beep detection: search around standby, or make_ready with wider window ---
     standby_anchors = [a for a in anchors if a.kind == "standby"]
+    ready_anchors = [a for a in anchors if a.kind == "ready"]
+
+    # if we have standby, search near standby (tight window)
+    # if no standby but have ready/make_ready, search with wider window (up to 90s)
+    beep_search_sources: list[tuple[Anchor, float, float]] = []
     for sb in standby_anchors:
-        search_start = max(0.0, sb.end_offset - config.beep_search_before)
-        search_end = sb.end_offset + config.beep_search_after
-        log.info("  Searching beep around standby at %.2fs, window %.2f-%.2fs (before=%.2f, after=%.2f)",
-                 sb.file_offset, search_start, search_end,
-                 config.beep_search_before, config.beep_search_after)
+        beep_search_sources.append((sb, config.beep_search_before, config.beep_search_after))
+
+    if not standby_anchors and ready_anchors:
+        for ra in ready_anchors:
+            beep_search_sources.append((ra, config.beep_search_before, 90.0))
+            log.info("  No standby found, using ready anchor at %.2fs with 90s beep search window", ra.file_offset)
+
+    for anchor, search_before, search_after in beep_search_sources:
+        search_start = max(0.0, anchor.end_offset - search_before)
+        search_end = anchor.end_offset + search_after
+        log.info("  Searching beep around %s at %.2fs, window %.2f-%.2fs",
+                 anchor.kind, anchor.file_offset, search_start, search_end)
 
         beeps = detect_beeps(fi.wav_path, search_start, search_end)
 
@@ -312,6 +324,12 @@ def _assemble_stages(anchors: list[Anchor], min_clip_length: float = 5.0) -> lis
             confirmed.append(stage)
             used_beeps.add(bi)
             used_ends.add(end_idx)
+            # also mark nearby end_commands as used (dedup "hammer down" vs
+            # "hammer down and holster" from the same moment)
+            end_time = anchors[end_idx].abs_time
+            for j, a in enumerate(anchors):
+                if a.kind == "end_command" and j not in used_ends and abs(a.abs_time - end_time) < 5.0:
+                    used_ends.add(j)
             _log_stage(stage, len(confirmed), "CONFIRMED")
 
     # --- second pass: beeps without end → fallback no-end ---
@@ -327,19 +345,36 @@ def _assemble_stages(anchors: list[Anchor], min_clip_length: float = 5.0) -> lis
         used_beeps.add(bi)
 
     # --- third pass: orphan end_commands → fallback no-start ---
+    # deduplicate orphan ends by time proximity: keep only the best-scoring
+    # end_command within each 5s window
     fallback_no_start: list[Stage] = []
-    for i, a in enumerate(anchors):
-        if a.kind == "end_command" and i not in used_ends:
-            stage = Stage(end_command=a)
-            stage.clip_end = a.abs_time + (a.end_offset - a.file_offset)
-            stage.clip_start = stage.clip_end - FALLBACK_DURATION
-            stage.start_reason = "fallback_3min_no_start"
-            stage.end_reason = f"matched:{a.text}"
-            stage.complete = False
-            for ga in anchors:
-                if ga.kind == "gunshot" and stage.clip_start <= ga.abs_time <= stage.clip_end:
-                    stage.gunshots.append(ga)
-            fallback_no_start.append(stage)
+    orphan_ends = [
+        (i, a) for i, a in enumerate(anchors)
+        if a.kind == "end_command" and i not in used_ends
+    ]
+    orphan_used: set[int] = set()
+    for idx, a in orphan_ends:
+        if idx in orphan_used:
+            continue
+        # find all orphan ends within 5s of this one, pick best
+        cluster = [(idx, a)]
+        for idx2, a2 in orphan_ends:
+            if idx2 != idx and idx2 not in orphan_used and abs(a2.abs_time - a.abs_time) < 5.0:
+                cluster.append((idx2, a2))
+        best_idx, best_a = max(cluster, key=lambda x: (len(x[1].text), x[1].score))
+        for ci, _ in cluster:
+            orphan_used.add(ci)
+
+        stage = Stage(end_command=best_a)
+        stage.clip_end = best_a.abs_time + (best_a.end_offset - best_a.file_offset)
+        stage.clip_start = stage.clip_end - FALLBACK_DURATION
+        stage.start_reason = "fallback_3min_no_start"
+        stage.end_reason = f"matched:{best_a.text}"
+        stage.complete = False
+        for ga in anchors:
+            if ga.kind == "gunshot" and stage.clip_start <= ga.abs_time <= stage.clip_end:
+                stage.gunshots.append(ga)
+        fallback_no_start.append(stage)
 
     # --- trim fallbacks against confirmed intervals ---
     confirmed_intervals = [(s.clip_start, s.clip_end) for s in confirmed]

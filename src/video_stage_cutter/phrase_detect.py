@@ -14,13 +14,18 @@ log = logging.getLogger(__name__)
 START_PHRASES = [
     "are you ready",
     "stand by",
+    "make ready",
 ]
 
 END_PHRASES = [
+    "if you are finished unload and show clear",
+    "unload and show clear",
     "if clear hammer down and holster",
     "if clear hammer down",
     "hammer down and holster",
     "hammer down",
+    "range is clear",
+    "stage is clear",
 ]
 
 DEFAULT_THRESHOLD = 70
@@ -169,14 +174,24 @@ def _fallback_segment_match(
     return start_matches, end_matches
 
 
-def _deduplicate(matches: list[PhraseMatch], time_tolerance: float = 0.5) -> list[PhraseMatch]:
-    """Keep only the highest-scoring match within each *time_tolerance* window."""
+def _deduplicate(matches: list[PhraseMatch], time_tolerance: float = 3.0) -> list[PhraseMatch]:
+    """Keep only the highest-scoring match within each *time_tolerance* window.
+
+    Only deduplicates matches of the same base phrase (e.g. two variants of
+    'hammer down' at the same time), not different phrases that happen to be close.
+    """
     if not matches:
         return matches
     matches.sort(key=lambda m: m.start)
     result: list[PhraseMatch] = [matches[0]]
     for m in matches[1:]:
-        if m.start - result[-1].start < time_tolerance:
+        # only dedup if overlapping in time AND sharing the shorter phrase
+        same_area = m.start - result[-1].start < time_tolerance
+        phrases_overlap = (
+            m.matched_phrase.lower() in result[-1].matched_phrase.lower()
+            or result[-1].matched_phrase.lower() in m.matched_phrase.lower()
+        )
+        if same_area and phrases_overlap:
             if m.score > result[-1].score:
                 result[-1] = m
         else:
