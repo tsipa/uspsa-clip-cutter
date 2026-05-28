@@ -26,7 +26,6 @@ END_PHRASES = [
     "if clear hammer down",
     "hammer down and holster",
     "hammer down",
-    "holster",
     "range is clear",
     "stage is clear",
 ]
@@ -44,7 +43,7 @@ class PhraseMatch:
     role: str  # "start" or "end"
 
 
-MAX_WORD_GAP = 5.0
+MAX_WORD_GAP = 2.0
 
 
 def _sliding_window_match(
