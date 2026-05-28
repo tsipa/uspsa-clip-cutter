@@ -44,6 +44,9 @@ class PhraseMatch:
     role: str  # "start" or "end"
 
 
+MAX_WORD_GAP = 5.0
+
+
 def _sliding_window_match(
     words_text: str,
     phrase: str,
@@ -61,6 +64,15 @@ def _sliding_window_match(
         if window_size > len(word_strings):
             continue
         for i in range(len(word_strings) - window_size + 1):
+            # skip windows where consecutive words have a large time gap
+            has_gap = False
+            for k in range(i, i + window_size - 1):
+                if words_starts[k + 1] - words_ends[k] > MAX_WORD_GAP:
+                    has_gap = True
+                    break
+            if has_gap:
+                continue
+
             window_text = " ".join(word_strings[i : i + window_size])
             score = fuzz.ratio(window_text.lower(), phrase.lower())
             if score >= threshold:
