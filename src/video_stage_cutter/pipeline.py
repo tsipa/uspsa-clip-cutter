@@ -112,6 +112,8 @@ class Stage:
     end_reason: str = ""
     complete: bool = False
 
+    confidence_boost: float = 0.0
+
     # set during overlap trimming for fallback stages
     original_clip_start: float | None = None
     original_clip_end: float | None = None
@@ -548,10 +550,79 @@ def _assemble_stages(anchors: list[Anchor], min_clip_length: float = 5.0) -> lis
     stages = confirmed + trimmed_fallbacks
     stages.sort(key=lambda s: s.clip_start)
 
+    # --- boost confidence based on corroborating evidence ---
+    _boost_all_stages(stages, anchors)
+
+    # --- filter low-confidence stages ---
+    MIN_CONFIDENCE = 0.4
+    before = len(stages)
+    stages = [s for s in stages if _effective_confidence(s) >= MIN_CONFIDENCE]
+    if len(stages) < before:
+        log.info("  Confidence filter: dropped %d stages below %.2f", before - len(stages), MIN_CONFIDENCE)
+
     # --- final dedup: remove stages that substantially overlap a better stage ---
     stages = _dedup_overlapping_stages(stages)
 
     return stages
+
+
+def _effective_confidence(stage: Stage) -> float:
+    """Combined confidence from pattern score + contextual boosts."""
+    base = _stage_confidence(stage)
+    return min(1.0, base + stage.confidence_boost)
+
+
+def _boost_all_stages(stages: list[Stage], anchors: list[Anchor]) -> None:
+    """Boost stage confidence based on corroborating evidence."""
+    for stage in stages:
+        stage.confidence_boost = 0.0
+        reasons: list[str] = []
+
+        # beep within 10s after start → strong confirmation
+        if stage.beep:
+            reasons.append("has_beep(+0.3)")
+            stage.confidence_boost += 0.3
+
+        # gunshots within 10s after start (beep or standby) → shooting started
+        start_time = stage.clip_start
+        gunshots_after_start = [
+            a for a in anchors
+            if a.kind == "gunshot" and 0 < a.abs_time - start_time <= 15.0
+        ]
+        if gunshots_after_start:
+            boost = min(0.2, len(gunshots_after_start) * 0.05)
+            reasons.append(f"gunshots_after_start({len(gunshots_after_start)},+{boost:.2f})")
+            stage.confidence_boost += boost
+
+        # gunshots within 10s before end → shooting was happening
+        if stage.end_command:
+            end_time = stage.end_command.abs_time
+            gunshots_before_end = [
+                a for a in anchors
+                if a.kind == "gunshot" and 0 < end_time - a.abs_time <= 15.0
+            ]
+            if gunshots_before_end:
+                boost = min(0.2, len(gunshots_before_end) * 0.05)
+                reasons.append(f"gunshots_before_end({len(gunshots_before_end)},+{boost:.2f})")
+                stage.confidence_boost += boost
+
+        # has both start AND end → much more likely real
+        has_start = stage.beep or stage.standby or stage.ready
+        has_end = stage.end_command is not None
+        if has_start and has_end:
+            reasons.append("has_start_and_end(+0.2)")
+            stage.confidence_boost += 0.2
+
+        # has standby (not just ready) → stronger start signal
+        if stage.standby:
+            reasons.append("has_standby(+0.1)")
+            stage.confidence_boost += 0.1
+
+        if reasons:
+            log.info("  Stage %.0f-%.0fs boost: %s total=+%.2f (effective=%.2f)",
+                     stage.clip_start, stage.clip_end,
+                     ", ".join(reasons), stage.confidence_boost,
+                     _effective_confidence(stage))
 
 
 def _build_stage_from_beep(
@@ -814,7 +885,7 @@ def _cut_stages(
             end_offset=f"{clip_end - primary.creation_epoch:.3f}",
             start_reason=stage.start_reason,
             end_reason=stage.end_reason,
-            confidence=f"{_stage_confidence(stage):.2f}",
+            confidence=f"{_effective_confidence(stage):.2f}",
         )
 
         _save_stage_debug(stage, i + 1, files, debug_dir)

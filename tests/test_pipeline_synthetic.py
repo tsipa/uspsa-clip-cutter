@@ -292,16 +292,25 @@ class TestReadyWithoutStandby:
         assert stages[0].complete is True
         assert "no_beep" in stages[0].start_reason
 
-    def test_ready_only_no_beep_no_end_produces_fallback(self) -> None:
-        """ready but no beep and no end = 3min fallback from ready."""
+    def test_ready_only_no_beep_no_end_dropped(self) -> None:
+        """ready alone with no corroborating evidence = dropped (below min confidence)."""
         anchors = [
             Anchor(kind="ready", abs_time=100.0, file_idx=0, file_offset=5.0, text="are you ready", score=90, end_offset=6.0),
         ]
         stages = _assemble_stages(anchors)
+        assert len(stages) == 0, "Lone 'ready' without beep/end/gunshots should be dropped"
+
+    def test_ready_with_gunshots_produces_fallback(self) -> None:
+        """ready + gunshots after = enough evidence for fallback."""
+        anchors = [
+            Anchor(kind="ready", abs_time=100.0, file_idx=0, file_offset=5.0, text="are you ready", score=90, end_offset=6.0),
+            Anchor(kind="gunshot", abs_time=108.0, file_idx=0, file_offset=13.0, text="gunshot", score=70),
+            Anchor(kind="gunshot", abs_time=109.0, file_idx=0, file_offset=14.0, text="gunshot", score=70),
+            Anchor(kind="gunshot", abs_time=110.0, file_idx=0, file_offset=15.0, text="gunshot", score=70),
+        ]
+        stages = _assemble_stages(anchors)
         assert len(stages) == 1
         assert stages[0].complete is False
-        assert "no_beep" in stages[0].start_reason
-        assert "fallback" in stages[0].end_reason
 
     def test_standby_only_no_beep_no_end_produces_fallback(self) -> None:
         """standby but no beep and no end = 3min fallback from standby."""
