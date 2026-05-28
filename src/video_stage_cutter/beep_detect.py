@@ -223,15 +223,21 @@ def analyze_beep_candidates(
         else:
             log.info("  REJECT t=%.3fs: %s", c.timestamp, c.reject_reason)
 
-    accepted = [c for c in candidates if c.accepted]
-    accepted = _collapse_beeps(accepted, collapse_window)
+    accepted_raw = [c for c in candidates if c.accepted]
+    accepted_collapsed = _collapse_beeps(accepted_raw, collapse_window)
+    collapsed_ids = {id(c) for c in accepted_collapsed}
 
+    for c in candidates:
+        if c.accepted and id(c) not in collapsed_ids:
+            c.accepted = False
+            c.reject_reason = "collapsed_duplicate"
+
+    num_accepted = sum(1 for c in candidates if c.accepted)
     log.info("  Result: %d accepted / %d rejected / %d total",
-             len(accepted), len(candidates) - len(accepted), len(candidates))
-    if not accepted:
+             num_accepted, len(candidates) - num_accepted, len(candidates))
+    if num_accepted == 0:
         log.warning("  No beep survived filtering in window %.2f-%.2fs", search_start, search_end)
 
-    # return ALL candidates (with accepted/reject_reason set) for debug logging
     return candidates
 
 
