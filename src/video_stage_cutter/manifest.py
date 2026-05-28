@@ -9,20 +9,6 @@ from pathlib import Path
 
 log = logging.getLogger(__name__)
 
-FIELDNAMES = [
-    "source_file",
-    "creation_time",
-    "duration",
-    "start_offset",
-    "end_offset",
-    "start_reason",
-    "end_reason",
-    "confidence",
-    "output_file",
-    "status",
-    "error_message",
-]
-
 
 @dataclass
 class ManifestRow:
@@ -42,8 +28,9 @@ class ManifestRow:
 def write_manifest(rows: list[ManifestRow], path: Path) -> None:
     """Write (or overwrite) the manifest CSV."""
     path.parent.mkdir(parents=True, exist_ok=True)
+    fieldnames = [f.name for f in fields(ManifestRow)]
     with path.open("w", newline="", encoding="utf-8") as fh:
-        writer = csv.DictWriter(fh, fieldnames=FIELDNAMES)
+        writer = csv.DictWriter(fh, fieldnames=fieldnames)
         writer.writeheader()
         for row in rows:
             writer.writerow({f.name: getattr(row, f.name) for f in fields(row)})
