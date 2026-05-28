@@ -292,13 +292,21 @@ class TestReadyWithoutStandby:
         assert stages[0].complete is True
         assert "no_beep" in stages[0].start_reason
 
-    def test_ready_only_no_beep_no_end_dropped(self) -> None:
-        """ready alone with no corroborating evidence = dropped (below min confidence)."""
+    def test_weak_ready_alone_dropped(self) -> None:
+        """Weak 'ready' (low pattern score) without evidence = dropped."""
         anchors = [
-            Anchor(kind="ready", abs_time=100.0, file_idx=0, file_offset=5.0, text="are you ready", score=90, end_offset=6.0),
+            Anchor(kind="ready", abs_time=100.0, file_idx=0, file_offset=5.0, text="ready(100)", score=20, end_offset=6.0),
         ]
         stages = _assemble_stages(anchors)
-        assert len(stages) == 0, "Lone 'ready' without beep/end/gunshots should be dropped"
+        assert len(stages) == 0, "Lone weak 'ready' should be dropped"
+
+    def test_strong_are_you_ready_alone_kept(self) -> None:
+        """Strong 'are you ready' (high pattern score) = kept even without beep/end."""
+        anchors = [
+            Anchor(kind="ready", abs_time=100.0, file_idx=0, file_offset=5.0, text="are you ready(100)", score=50, end_offset=6.0),
+        ]
+        stages = _assemble_stages(anchors)
+        assert len(stages) == 1, "'are you ready' with conf=0.50 should pass min threshold"
 
     def test_ready_with_gunshots_produces_fallback(self) -> None:
         """ready + gunshots after = enough evidence for fallback."""

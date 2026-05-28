@@ -982,6 +982,8 @@ def _stage_confidence(stage: Stage) -> float:
         scores.append(stage.beep.score / 100.0)
     if stage.standby:
         scores.append(stage.standby.score / 100.0)
+    if stage.ready:
+        scores.append(stage.ready.score / 100.0)
     if stage.end_command:
         scores.append(stage.end_command.score / 100.0)
     if stage.gunshots:
