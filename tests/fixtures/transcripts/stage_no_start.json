@@ -1,0 +1,20 @@
+{
+  "source": "synthetic_stage_no_start.mp4",
+  "language": "en",
+  "duration": 120.0,
+  "segments": [
+    {
+      "start": 44.0,
+      "end": 46.5,
+      "text": "If clear hammer down and holster",
+      "words": [
+        {"start": 44.0, "end": 44.2, "word": "If", "probability": 0.94},
+        {"start": 44.2, "end": 44.7, "word": "clear", "probability": 0.94},
+        {"start": 44.7, "end": 45.2, "word": "hammer", "probability": 0.94},
+        {"start": 45.2, "end": 45.6, "word": "down", "probability": 0.94},
+        {"start": 45.6, "end": 45.9, "word": "and", "probability": 0.94},
+        {"start": 45.9, "end": 46.5, "word": "holster", "probability": 0.94}
+      ]
+    }
+  ]
+}

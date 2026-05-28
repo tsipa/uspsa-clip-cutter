@@ -1,0 +1,49 @@
+{
+  "source": "synthetic_stage_normal.mp4",
+  "language": "en",
+  "duration": 75.0,
+  "segments": [
+    {
+      "start": 1.0,
+      "end": 2.0,
+      "text": "Shooter make ready",
+      "words": [
+        {"start": 1.0, "end": 1.3, "word": "Shooter", "probability": 0.98},
+        {"start": 1.3, "end": 1.5, "word": "make", "probability": 0.98},
+        {"start": 1.5, "end": 2.0, "word": "ready", "probability": 0.98}
+      ]
+    },
+    {
+      "start": 8.0,
+      "end": 9.0,
+      "text": "Are you ready",
+      "words": [
+        {"start": 8.0, "end": 8.2, "word": "Are", "probability": 0.97},
+        {"start": 8.2, "end": 8.5, "word": "you", "probability": 0.97},
+        {"start": 8.5, "end": 9.0, "word": "ready", "probability": 0.97}
+      ]
+    },
+    {
+      "start": 9.3,
+      "end": 10.0,
+      "text": "Stand by",
+      "words": [
+        {"start": 9.3, "end": 9.6, "word": "Stand", "probability": 0.96},
+        {"start": 9.6, "end": 10.0, "word": "by", "probability": 0.96}
+      ]
+    },
+    {
+      "start": 37.0,
+      "end": 39.5,
+      "text": "If clear hammer down and holster",
+      "words": [
+        {"start": 37.0, "end": 37.2, "word": "If", "probability": 0.95},
+        {"start": 37.2, "end": 37.6, "word": "clear", "probability": 0.95},
+        {"start": 37.6, "end": 38.1, "word": "hammer", "probability": 0.95},
+        {"start": 38.1, "end": 38.5, "word": "down", "probability": 0.95},
+        {"start": 38.5, "end": 38.8, "word": "and", "probability": 0.95},
+        {"start": 38.8, "end": 39.5, "word": "holster", "probability": 0.95}
+      ]
+    }
+  ]
+}

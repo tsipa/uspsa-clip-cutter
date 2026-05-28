@@ -1,0 +1,49 @@
+{
+  "source": "synthetic_stage_multiple_stages.mp4",
+  "language": "en",
+  "duration": 240.0,
+  "segments": [
+    {
+      "start": 5.0,
+      "end": 5.8,
+      "text": "Stand by",
+      "words": [
+        {"start": 5.0, "end": 5.3, "word": "Stand", "probability": 0.96},
+        {"start": 5.3, "end": 5.8, "word": "by", "probability": 0.96}
+      ]
+    },
+    {
+      "start": 40.0,
+      "end": 42.0,
+      "text": "Hammer down and holster",
+      "words": [
+        {"start": 40.0, "end": 40.5, "word": "Hammer", "probability": 0.94},
+        {"start": 40.5, "end": 41.0, "word": "down", "probability": 0.94},
+        {"start": 41.0, "end": 41.3, "word": "and", "probability": 0.94},
+        {"start": 41.3, "end": 42.0, "word": "holster", "probability": 0.94}
+      ]
+    },
+    {
+      "start": 95.0,
+      "end": 95.8,
+      "text": "Stand by",
+      "words": [
+        {"start": 95.0, "end": 95.3, "word": "Stand", "probability": 0.95},
+        {"start": 95.3, "end": 95.8, "word": "by", "probability": 0.95}
+      ]
+    },
+    {
+      "start": 130.0,
+      "end": 132.5,
+      "text": "If clear hammer down and holster",
+      "words": [
+        {"start": 130.0, "end": 130.2, "word": "If", "probability": 0.94},
+        {"start": 130.2, "end": 130.7, "word": "clear", "probability": 0.94},
+        {"start": 130.7, "end": 131.2, "word": "hammer", "probability": 0.94},
+        {"start": 131.2, "end": 131.6, "word": "down", "probability": 0.94},
+        {"start": 131.6, "end": 131.9, "word": "and", "probability": 0.94},
+        {"start": 131.9, "end": 132.5, "word": "holster", "probability": 0.94}
+      ]
+    }
+  ]
+}

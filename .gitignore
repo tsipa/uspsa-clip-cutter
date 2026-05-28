@@ -5,5 +5,16 @@ __pycache__/
 dist/
 build/
 .venv/
-*.wav
 .eggs/
+
+# Media files (never commit real footage)
+*.wav
+*.mp4
+*.MP4
+*.mov
+*.MOV
+*.m4v
+*.M4V
+
+# Local test fixtures with real video
+local_fixtures/

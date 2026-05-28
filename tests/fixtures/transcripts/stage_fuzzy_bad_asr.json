@@ -1,0 +1,40 @@
+{
+  "source": "synthetic_stage_fuzzy_bad_asr.mp4",
+  "language": "en",
+  "duration": 90.0,
+  "segments": [
+    {
+      "start": 12.0,
+      "end": 12.8,
+      "text": "are you red tea",
+      "words": [
+        {"start": 12.0, "end": 12.2, "word": "are", "probability": 0.72},
+        {"start": 12.2, "end": 12.4, "word": "you", "probability": 0.80},
+        {"start": 12.4, "end": 12.6, "word": "red", "probability": 0.51},
+        {"start": 12.6, "end": 12.8, "word": "tea", "probability": 0.49}
+      ]
+    },
+    {
+      "start": 13.0,
+      "end": 13.6,
+      "text": "stand bye",
+      "words": [
+        {"start": 13.0, "end": 13.3, "word": "stand", "probability": 0.76},
+        {"start": 13.3, "end": 13.6, "word": "bye", "probability": 0.65}
+      ]
+    },
+    {
+      "start": 49.0,
+      "end": 51.8,
+      "text": "if clear hammer dawn and holster",
+      "words": [
+        {"start": 49.0, "end": 49.2, "word": "if", "probability": 0.88},
+        {"start": 49.2, "end": 49.7, "word": "clear", "probability": 0.86},
+        {"start": 49.7, "end": 50.2, "word": "hammer", "probability": 0.82},
+        {"start": 50.2, "end": 50.7, "word": "dawn", "probability": 0.48},
+        {"start": 50.7, "end": 51.0, "word": "and", "probability": 0.80},
+        {"start": 51.0, "end": 51.8, "word": "holster", "probability": 0.81}
+      ]
+    }
+  ]
+}

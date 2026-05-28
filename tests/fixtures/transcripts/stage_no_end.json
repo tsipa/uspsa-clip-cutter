@@ -1,0 +1,36 @@
+{
+  "source": "synthetic_stage_no_end.mp4",
+  "language": "en",
+  "duration": 220.0,
+  "segments": [
+    {
+      "start": 4.0,
+      "end": 4.9,
+      "text": "Are you ready",
+      "words": [
+        {"start": 4.0, "end": 4.2, "word": "Are", "probability": 0.96},
+        {"start": 4.2, "end": 4.5, "word": "you", "probability": 0.96},
+        {"start": 4.5, "end": 4.9, "word": "ready", "probability": 0.96}
+      ]
+    },
+    {
+      "start": 5.1,
+      "end": 5.8,
+      "text": "Stand by",
+      "words": [
+        {"start": 5.1, "end": 5.4, "word": "Stand", "probability": 0.96},
+        {"start": 5.4, "end": 5.8, "word": "by", "probability": 0.96}
+      ]
+    },
+    {
+      "start": 30.0,
+      "end": 32.0,
+      "text": "Range is clear",
+      "words": [
+        {"start": 30.0, "end": 30.6, "word": "Range", "probability": 0.91},
+        {"start": 30.6, "end": 31.0, "word": "is", "probability": 0.91},
+        {"start": 31.0, "end": 32.0, "word": "clear", "probability": 0.91}
+      ]
+    }
+  ]
+}

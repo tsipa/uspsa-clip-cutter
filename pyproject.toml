@@ -24,3 +24,8 @@ uspsa-clip-cutter = "video_stage_cutter.cli:app"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+markers = [
+    "real_video: tests that require local large real video files (not run in CI)",
+]
