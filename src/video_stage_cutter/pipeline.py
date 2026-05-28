@@ -160,17 +160,15 @@ def discover_videos(input_dir: Path) -> list[Path]:
     return videos
 
 
-def _collect_anchors_for_file(
+def _transcribe_file(
     file_info: FileInfo,
     file_idx: int,
     config: ProcessingConfig,
     debug_dir: Path,
     whisper_model: object | None,
-) -> tuple[list[Anchor], object | None]:
-    """Extract all anchors from one file."""
-    anchors: list[Anchor] = []
+) -> object | None:
+    """Phase 1A: extract audio and transcribe one file. Stores segments in file_info."""
     fi = file_info
-    epoch = fi.creation_epoch
 
     log.info("=" * 60)
     log.info("FILE [%d]: %s (%.1fs, created %s)", file_idx, fi.path.name, fi.duration, fi.creation_str)
@@ -184,37 +182,98 @@ def _collect_anchors_for_file(
         log.info("    [%.2f-%.2f] %s", seg.start, seg.end, seg.text)
 
     save_transcript(fi.segments, debug_dir / f"{fi.path.stem}_transcript.json")
+    return whisper_model
 
-    start_matches, end_matches = detect_phrases(fi.segments, threshold=config.phrase_threshold)
 
+def _detect_phrases_global(
+    files: list[FileInfo],
+    config: ProcessingConfig,
+) -> list[Anchor]:
+    """Phase 1B: run sequence detection on global timeline across all files."""
+    from video_stage_cutter.transcribe import TranscriptSegment, WordInfo
+
+    # build global word list with absolute timestamps
+    global_segments: list[TranscriptSegment] = []
+    word_file_map: list[int] = []  # maps global word index → file_idx
+
+    for file_idx, fi in enumerate(files):
+        epoch = fi.creation_epoch
+        for seg in fi.segments:
+            global_words = []
+            for w in seg.words:
+                global_words.append(WordInfo(
+                    start=w.start + epoch,
+                    end=w.end + epoch,
+                    word=w.word,
+                    probability=w.probability,
+                ))
+            global_segments.append(TranscriptSegment(
+                start=seg.start + epoch,
+                end=seg.end + epoch,
+                text=seg.text,
+                words=global_words,
+            ))
+            word_file_map.extend([file_idx] * len(seg.words))
+
+    log.info("  Global timeline: %d segments, %d words across %d files",
+             len(global_segments), sum(len(s.words) for s in global_segments), len(files))
+
+    start_matches, end_matches = detect_phrases(global_segments, threshold=config.phrase_threshold)
+
+    anchors: list[Anchor] = []
     for m in start_matches:
-        kind = "standby" if "stand by" in m.matched_phrase.lower() else "ready"
+        file_idx = _find_file_for_time(m.start, files)
+        epoch = files[file_idx].creation_epoch
+        kind = "standby" if "stand" in m.matched_phrase.lower() else "ready"
         anchors.append(Anchor(
-            kind=kind, abs_time=epoch + m.start, file_idx=file_idx,
-            file_offset=m.start, text=m.text, score=m.score,
-            end_offset=m.end,
+            kind=kind, abs_time=m.start, file_idx=file_idx,
+            file_offset=m.start - epoch, text=m.text, score=m.score,
+            end_offset=m.end - epoch,
         ))
-        log.info("  ANCHOR %s: %.2fs '%s' (matched '%s', score=%.0f)",
-                 kind.upper(), m.start, m.text, m.matched_phrase, m.score)
+        log.info("  ANCHOR %s: file[%d] @ %.2fs '%s' (score=%.0f)",
+                 kind.upper(), file_idx, m.start - epoch, m.text, m.score)
 
     for m in end_matches:
+        file_idx = _find_file_for_time(m.start, files)
+        epoch = files[file_idx].creation_epoch
         anchors.append(Anchor(
-            kind="end_command", abs_time=epoch + m.start, file_idx=file_idx,
-            file_offset=m.start, text=m.text, score=m.score,
-            end_offset=m.end,
+            kind="end_command", abs_time=m.start, file_idx=file_idx,
+            file_offset=m.start - epoch, text=m.text, score=m.score,
+            end_offset=m.end - epoch,
         ))
-        log.info("  ANCHOR END_COMMAND: %.2fs '%s' (matched '%s', score=%.0f)",
-                 m.start, m.text, m.matched_phrase, m.score)
+        log.info("  ANCHOR END_COMMAND: file[%d] @ %.2fs '%s' (score=%.0f)",
+                 file_idx, m.start - epoch, m.text, m.score)
 
-    # --- beep detection: search around standby, or make_ready with wider window ---
-    standby_anchors = [a for a in anchors if a.kind == "standby"]
-    ready_anchors = [a for a in anchors if a.kind == "ready"]
+    return anchors
 
-    # if we have standby, search near standby (tight window)
-    # if no standby but have ready/make_ready, search with wider window (up to 90s)
-    # beep search always stops at the first end_command after the anchor
+
+def _find_file_for_time(abs_time: float, files: list[FileInfo]) -> int:
+    """Find which file an absolute timestamp belongs to."""
+    for i, fi in enumerate(files):
+        if fi.creation_epoch <= abs_time <= fi.creation_epoch + fi.duration:
+            return i
+    # fallback: nearest file
+    return min(range(len(files)), key=lambda i: abs(files[i].creation_epoch - abs_time))
+
+
+def _collect_audio_anchors_for_file(
+    file_info: FileInfo,
+    file_idx: int,
+    config: ProcessingConfig,
+    phrase_anchors: list[Anchor],
+) -> list[Anchor]:
+    """Phase 1C: detect beeps and gunshots for one file."""
+    anchors: list[Anchor] = []
+    fi = file_info
+    epoch = fi.creation_epoch
+
+    # --- beep detection: search around standby/ready from global phrase detection ---
+    file_phrase_anchors = [a for a in phrase_anchors if a.file_idx == file_idx]
+    standby_anchors = [a for a in file_phrase_anchors if a.kind == "standby"]
+    ready_anchors = [a for a in file_phrase_anchors if a.kind == "ready"]
+
     end_command_anchors = sorted(
-        [a for a in anchors if a.kind == "end_command"],
+        [a for a in file_phrase_anchors if a.kind == "end_command"],
         key=lambda a: a.file_offset,
     )
 
@@ -1219,65 +1278,33 @@ def run_batch(
         for i, fi in enumerate(files):
             log.info("  [%d] %s: epoch=%.1f duration=%.1fs", i, fi.path.name, fi.creation_epoch, fi.duration)
 
-    num_workers = _resolve_workers(config)
-    log.info("PASS 1: Collecting anchors from %d files (workers=%d) ...", len(files), num_workers)
-    all_anchors: list[Anchor] = []
+    # --- Phase 1A: transcribe all files ---
+    log.info("PASS 1A: Transcribing %d files ...", len(files))
+    whisper_model = None
+    for i, fi in enumerate(tqdm(files, desc="Pass 1A: transcribing")):
+        try:
+            whisper_model = _transcribe_file(fi, i, config, debug_dir, whisper_model)
+        except Exception as exc:
+            log.error("Failed to transcribe %s: %s", fi.path.name, exc)
 
-    if num_workers <= 1 or len(files) <= 1:
-        # sequential mode: share one model across files
-        whisper_model = None
-        for i, fi in enumerate(tqdm(files, desc="Pass 1: collecting anchors")):
-            try:
-                anchors, whisper_model = _collect_anchors_for_file(
-                    fi, i, config, debug_dir, whisper_model,
-                )
-                all_anchors.extend(anchors)
-            except Exception as exc:
-                log.error("Failed to process %s: %s", fi.path.name, exc)
-    else:
-        # parallel mode: each worker loads its own model
-        worker_args = [
-            {
-                "video_path": str(fi.path),
-                "wav_path": str(fi.wav_path),
-                "debug_dir": str(debug_dir),
-                "file_idx": i,
-                "epoch": fi.creation_epoch,
-                "duration": fi.duration,
-                "creation_str": fi.creation_str,
-                "creation_iso": fi.creation_iso,
-                "phrase_threshold": config.phrase_threshold,
-                "beep_search_before": config.beep_search_before,
-                "beep_search_after": config.beep_search_after,
-            }
-            for i, fi in enumerate(files)
-        ]
+    # --- Phase 1B: global phrase detection across all files ---
+    log.info("PASS 1B: Detecting phrases on global timeline ...")
+    phrase_anchors = _detect_phrases_global(files, config)
+    log.info("PASS 1B COMPLETE: %d phrase anchors", len(phrase_anchors))
 
-        log.info("Spawning %d worker processes (each loads its own Whisper model) ...", num_workers)
-        ctx = multiprocessing.get_context("spawn")
-        with ProcessPoolExecutor(
-            max_workers=num_workers,
-            mp_context=ctx,
-            initializer=_worker_init,
-            initargs=(config.model, config.device, config.compute_type),
-        ) as executor:
-            for result in tqdm(
-                executor.map(_worker_process_file, worker_args),
-                total=len(worker_args),
-                desc="Pass 1: collecting anchors",
-            ):
-                if result["error"]:
-                    fi = files[result["file_idx"]]
-                    log.error("Failed to process %s: %s", fi.path.name, result["error"])
-                else:
-                    for ad in result["anchors"]:
-                        all_anchors.append(Anchor(**ad))
-                    fi = files[result["file_idx"]]
-                    fi.beep_searches = [
-                        BeepSearchRecord(**bs) for bs in result["beep_searches"]
-                    ]
+    # --- Phase 1C: beep/gunshot detection per file ---
+    log.info("PASS 1C: Detecting beeps and gunshots ...")
+    audio_anchors: list[Anchor] = []
+    for i, fi in enumerate(tqdm(files, desc="Pass 1C: audio analysis")):
+        try:
+            aa = _collect_audio_anchors_for_file(fi, i, config, phrase_anchors)
+            audio_anchors.extend(aa)
+        except Exception as exc:
+            log.error("Failed audio analysis for %s: %s", fi.path.name, exc)
 
-    log.info("PASS 1 COMPLETE: %d anchors total", len(all_anchors))
+    all_anchors = phrase_anchors + audio_anchors
+    log.info("PASS 1 COMPLETE: %d anchors total (%d phrase + %d audio)",
+             len(all_anchors), len(phrase_anchors), len(audio_anchors))
 
     log.info("PASS 2: Assembling stages ...")
     stages = _assemble_stages(all_anchors, min_clip_length=config.min_clip_length)
