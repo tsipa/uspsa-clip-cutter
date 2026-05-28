@@ -14,7 +14,9 @@ log = logging.getLogger(__name__)
 START_PHRASES = [
     "are you ready",
     "stand by",
+    "standby",
     "make ready",
+    "load and make ready",
 ]
 
 END_PHRASES = [
@@ -24,6 +26,7 @@ END_PHRASES = [
     "if clear hammer down",
     "hammer down and holster",
     "hammer down",
+    "holster",
     "range is clear",
     "stage is clear",
 ]
