@@ -50,7 +50,7 @@ def transcribe_audio(
             "Are you ready? Stand by. Standby. "
             "If you are finished, unload and show clear. "
             "If clear, hammer down and holster. Hammer down. Holster. "
-            "Range is clear."
+            "Range is clear. Stage is clear."
         ),
         vad_filter=True,
     )

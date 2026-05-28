@@ -209,6 +209,12 @@ def _collect_anchors_for_file(
 
     # if we have standby, search near standby (tight window)
     # if no standby but have ready/make_ready, search with wider window (up to 90s)
+    # beep search always stops at the first end_command after the anchor
+    end_command_anchors = sorted(
+        [a for a in anchors if a.kind == "end_command"],
+        key=lambda a: a.file_offset,
+    )
+
     beep_search_sources: list[tuple[Anchor, float, float]] = []
     for sb in standby_anchors:
         beep_search_sources.append((sb, config.beep_search_before, config.beep_search_after))
@@ -216,11 +222,21 @@ def _collect_anchors_for_file(
     if not standby_anchors and ready_anchors:
         for ra in ready_anchors:
             beep_search_sources.append((ra, config.beep_search_before, 90.0))
-            log.info("  No standby found, using ready anchor at %.2fs with 90s beep search window", ra.file_offset)
+            log.info("  No standby found, using ready anchor at %.2fs with wider beep search window", ra.file_offset)
 
     for anchor, search_before, search_after in beep_search_sources:
         search_start = max(0.0, anchor.end_offset - search_before)
         search_end = anchor.end_offset + search_after
+
+        # clamp search_end to first end_command after anchor
+        for ec in end_command_anchors:
+            if ec.file_offset > anchor.end_offset:
+                if ec.file_offset < search_end:
+                    log.info("  Clamping beep search end from %.2fs to %.2fs (end_command at %.2fs)",
+                             search_end, ec.file_offset, ec.file_offset)
+                    search_end = ec.file_offset
+                break
+
         log.info("  Searching beep around %s at %.2fs, window %.2f-%.2fs",
                  anchor.kind, anchor.file_offset, search_start, search_end)
 
@@ -874,7 +890,7 @@ def _transcribe(
             "Are you ready? Stand by. Standby. "
             "If you are finished, unload and show clear. "
             "If clear, hammer down and holster. Hammer down. Holster. "
-            "Range is clear."
+            "Range is clear. Stage is clear."
         ),
         vad_filter=True,
     )
