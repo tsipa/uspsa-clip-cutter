@@ -115,6 +115,42 @@ class TestDetectBeeps:
             wav_path.unlink(missing_ok=True)
 
 
+    def test_gunshot_series_rejected_by_neighbors(self) -> None:
+        """A series of 5 energy spikes within 1s (gunshot burst) should be
+        rejected by the neighbors filter, even if individual spikes have
+        some energy in the beep band."""
+        sr = 16000
+        audio = np.random.normal(0, 50, sr * 4).astype(np.float32)
+        # 5 tonal-ish spikes at 2.0, 2.2, 2.4, 2.6, 2.8s (every 200ms)
+        for offset in [2.0, 2.2, 2.4, 2.6, 2.8]:
+            t = np.arange(int(sr * 0.03)) / sr  # 30ms each
+            spike = (15000 * np.sin(2 * np.pi * 3500 * t)).astype(np.float32)
+            start = int(offset * sr)
+            audio[start:start + len(spike)] = spike
+        wav_path = _make_wav(audio, sr)
+
+        try:
+            candidates = analyze_beep_candidates(wav_path, search_start=1.5, search_end=3.5)
+            accepted = [c for c in candidates if c.accepted]
+            assert len(accepted) == 0, (
+                f"Gunshot series should be rejected by neighbors filter, "
+                f"but {len(accepted)} accepted: "
+                f"{[(c.timestamp, c.neighbors_1s, c.reject_reason) for c in accepted]}"
+            )
+            # verify at least some candidates were found but rejected
+            assert len(candidates) >= 3, (
+                f"Expected >=3 raw candidates from 5 spikes, got {len(candidates)}"
+            )
+            # check that rejection mentions series/neighbors
+            series_rejected = [c for c in candidates if "series" in c.reject_reason]
+            assert len(series_rejected) >= 1, (
+                f"Expected some candidates rejected for 'series', got reasons: "
+                f"{[c.reject_reason for c in candidates]}"
+            )
+        finally:
+            wav_path.unlink(missing_ok=True)
+
+
 class TestDetectGunshots:
     def test_finds_amplitude_spike(self) -> None:
         sr = 16000
