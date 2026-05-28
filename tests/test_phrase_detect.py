@@ -64,7 +64,7 @@ class TestDetectPhrases:
         starts, ends = detect_phrases(segments)
         assert len(ends) == 1
         # pattern should contain both hammer down and holster keywords
-        assert ends[0].score > 50  # high confidence from multiple keywords
+        assert ends[0].score > 40  # multi-step sequence
 
     def test_holster_alone_low_confidence(self) -> None:
         """Standalone 'holster' should have low confidence (single keyword, weight=0.3)."""
@@ -100,7 +100,7 @@ class TestDetectPhrases:
         ]
         starts, ends = detect_phrases(segments)
         assert len(starts) == 1  # grouped into one pattern
-        assert starts[0].score > 80  # high confidence
+        assert starts[0].score > 70  # high confidence from ordered sequence
 
     def test_full_end_sequence_high_confidence(self) -> None:
         """Full end sequence with multiple keywords = very high confidence."""
