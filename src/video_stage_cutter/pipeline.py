@@ -724,7 +724,17 @@ def _transcribe(
 
     log.info("  Transcribing %s ...", wav_path.name)
     segments_iter, _info = cached_model.transcribe(
-        str(wav_path), beam_size=5, word_timestamps=True, language="en",
+        str(wav_path),
+        beam_size=5,
+        word_timestamps=True,
+        language="en",
+        initial_prompt=(
+            "USPSA shooting match. Range officer commands: "
+            "Shooter make ready. Are you ready? Stand by. "
+            "If clear, hammer down and holster. "
+            "If finished, unload and show clear. Range is clear."
+        ),
+        vad_filter=True,
     )
 
     segments: list[TranscriptSegment] = []
