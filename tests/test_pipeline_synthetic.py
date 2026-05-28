@@ -22,6 +22,8 @@ from video_stage_cutter.pipeline import (
     ProcessingConfig,
     Stage,
     _assemble_stages,
+    _subtract_intervals,
+    _trim_fallback,
 )
 
 
@@ -239,3 +241,113 @@ class TestAssembleStages:
         stage2_gs_times = [g.abs_time for g in stages[1].gunshots]
         assert 150.0 not in stage1_gs_times
         assert 150.0 not in stage2_gs_times
+
+
+class TestSubtractIntervals:
+    def test_no_overlap(self) -> None:
+        result = _subtract_intervals(0, 100, [(200, 300)])
+        assert result == [(0, 100)]
+
+    def test_full_overlap(self) -> None:
+        result = _subtract_intervals(10, 50, [(0, 100)])
+        assert result == []
+
+    def test_partial_overlap_start(self) -> None:
+        result = _subtract_intervals(0, 100, [(50, 150)])
+        assert result == [(0, 50)]
+
+    def test_partial_overlap_end(self) -> None:
+        result = _subtract_intervals(50, 150, [(0, 100)])
+        assert result == [(100, 150)]
+
+    def test_middle_hole(self) -> None:
+        result = _subtract_intervals(0, 100, [(30, 60)])
+        assert result == [(0, 30), (60, 100)]
+
+    def test_multiple_exclusions(self) -> None:
+        result = _subtract_intervals(0, 100, [(10, 20), (40, 50), (80, 90)])
+        assert result == [(0, 10), (20, 40), (50, 80), (90, 100)]
+
+
+class TestFallbackOverlapTrimming:
+    def test_fallback_trimmed_to_avoid_confirmed(self) -> None:
+        """Confirmed stage at 10-45, fallback ending at 55 should be trimmed to 45-55."""
+        stage = Stage(
+            end_command=Anchor(kind="end_command", abs_time=55.0, file_idx=0, file_offset=55.0,
+                               text="hammer down", score=85, end_offset=56.0),
+            clip_start=55.0 - 180.0,  # -125, would be clamped elsewhere
+            clip_end=56.0,
+            start_reason="fallback_3min_no_start",
+            end_reason="matched:hammer down",
+            complete=False,
+        )
+        # clamp start to 0
+        stage.clip_start = max(0, stage.clip_start)
+
+        confirmed_intervals = [(10.0, 45.0)]
+        result = _trim_fallback(stage, confirmed_intervals, min_clip_length=5.0)
+
+        assert result is not None
+        assert result.clip_start >= 45.0
+        assert result.clip_end <= 56.0
+        assert result.trimmed is True
+
+    def test_fallback_skipped_when_too_short(self) -> None:
+        """If trimming leaves interval shorter than min_clip_length, skip it."""
+        stage = Stage(
+            beep=Anchor(kind="beep", abs_time=60.0, file_idx=0, file_offset=60.0,
+                        text="timer_beep", score=80),
+            clip_start=60.0,
+            clip_end=60.0 + 180.0,
+            start_reason="beep",
+            end_reason="fallback_3min_no_end",
+            complete=False,
+        )
+        # confirmed stage covers almost all the fallback window
+        confirmed_intervals = [(62.0, 239.0)]
+        result = _trim_fallback(stage, confirmed_intervals, min_clip_length=5.0)
+
+        # remaining: 60-62 (2s) and 239-240 (1s), both < 5s
+        assert result is None
+
+    def test_fallback_no_overlap(self) -> None:
+        """Fallback with no overlap should pass through unchanged."""
+        stage = Stage(
+            beep=Anchor(kind="beep", abs_time=300.0, file_idx=0, file_offset=300.0,
+                        text="timer_beep", score=80),
+            clip_start=300.0,
+            clip_end=480.0,
+            start_reason="beep",
+            end_reason="fallback_3min_no_end",
+            complete=False,
+        )
+        confirmed_intervals = [(10.0, 45.0)]
+        result = _trim_fallback(stage, confirmed_intervals, min_clip_length=5.0)
+
+        assert result is not None
+        assert result.clip_start == 300.0
+        assert result.clip_end == 480.0
+        assert result.trimmed is False
+
+    def test_assembly_trims_fallback_against_confirmed(self) -> None:
+        """Full integration: confirmed stage should prevent fallback overlap."""
+        anchors = [
+            # confirmed stage: beep at 10, end at 45
+            Anchor(kind="standby",     abs_time=8.0,  file_idx=0, file_offset=8.0,  text="stand by",    score=90),
+            Anchor(kind="beep",        abs_time=10.0, file_idx=0, file_offset=10.0, text="timer_beep",  score=80),
+            Anchor(kind="end_command", abs_time=45.0, file_idx=0, file_offset=45.0, text="hammer down", score=85, end_offset=46.0),
+            # orphan end at 55 with no start
+            Anchor(kind="end_command", abs_time=55.0, file_idx=0, file_offset=55.0, text="hammer down", score=85, end_offset=56.0),
+        ]
+        stages = _assemble_stages(anchors, min_clip_length=5.0)
+
+        confirmed = [s for s in stages if s.complete]
+        fallbacks = [s for s in stages if not s.complete]
+
+        assert len(confirmed) == 1
+        assert confirmed[0].clip_start == 10.0
+
+        if fallbacks:
+            for fb in fallbacks:
+                # fallback must not overlap confirmed stage
+                assert fb.clip_start >= 46.0 or fb.clip_end <= 10.0

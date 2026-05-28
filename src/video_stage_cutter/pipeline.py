@@ -1,4 +1,4 @@
-"""Anchor-based pipeline: collect all events, then assemble stages."""
+"""Anchor-based pipeline: collect all events globally, then assemble stages."""
 
 from __future__ import annotations
 
@@ -53,6 +53,8 @@ class ProcessingConfig:
     overwrite: bool = False
     dry_run: bool = False
     phrase_threshold: float = 70.0
+    beep_search_before: float = 0.25
+    beep_search_after: float = 5.0
 
 
 # ---------------------------------------------------------------------------
@@ -74,6 +76,20 @@ class Anchor:
 
 
 # ---------------------------------------------------------------------------
+# Beep search debug record
+# ---------------------------------------------------------------------------
+
+@dataclass
+class BeepSearchRecord:
+    standby_offset: float
+    search_start: float
+    search_end: float
+    candidates: list[dict] = field(default_factory=list)
+    chosen_timestamp: float | None = None
+    chosen_reason: str = ""
+
+
+# ---------------------------------------------------------------------------
 # Stage: assembled from anchors
 # ---------------------------------------------------------------------------
 
@@ -90,6 +106,12 @@ class Stage:
     start_reason: str = ""
     end_reason: str = ""
     complete: bool = False
+
+    # set during overlap trimming for fallback stages
+    original_clip_start: float | None = None
+    original_clip_end: float | None = None
+    trimmed: bool = False
+    trimmed_by: str = ""
 
     @property
     def duration(self) -> float:
@@ -109,6 +131,7 @@ class FileInfo:
     creation_str: str
     creation_iso: str
     segments: list[TranscriptSegment] = field(default_factory=list)
+    beep_searches: list[BeepSearchRecord] = field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
@@ -120,14 +143,13 @@ def discover_videos(input_dir: Path) -> list[Path]:
         p for p in input_dir.iterdir()
         if p.is_file() and p.suffix.lower() in VIDEO_EXTENSIONS
     ]
-    # try metadata sort; if any file lacks creation_time, fall back to filename
     has_metadata = all(get_creation_time(v) is not None for v in videos)
     if has_metadata:
         videos.sort(key=lambda p: get_creation_time(p))
         log.info("Sorted %d videos by creation_time metadata", len(videos))
     else:
         videos.sort(key=filename_sort_key)
-        log.info("Some files lack creation_time — sorted %d videos by filename (GoPro-aware)", len(videos))
+        log.info("Some files lack creation_time -- sorted %d videos by filename (GoPro-aware)", len(videos))
     return videos
 
 
@@ -146,11 +168,9 @@ def _collect_anchors_for_file(
     log.info("=" * 60)
     log.info("FILE [%d]: %s (%.1fs, created %s)", file_idx, fi.path.name, fi.duration, fi.creation_str)
 
-    # --- extract audio ---
     log.info("  Extracting audio ...")
     extract_audio(fi.path, fi.wav_path)
 
-    # --- transcribe ---
     fi.segments, whisper_model = _transcribe(fi.wav_path, config, whisper_model)
     log.info("  Transcript (%d segments):", len(fi.segments))
     for seg in fi.segments:
@@ -158,7 +178,6 @@ def _collect_anchors_for_file(
 
     save_transcript(fi.segments, debug_dir / f"{fi.path.stem}_transcript.json")
 
-    # --- phrase detection ---
     start_matches, end_matches = detect_phrases(fi.segments, threshold=config.phrase_threshold)
 
     for m in start_matches:
@@ -183,29 +202,51 @@ def _collect_anchors_for_file(
     # --- beep detection: search around each standby ---
     standby_anchors = [a for a in anchors if a.kind == "standby"]
     for sb in standby_anchors:
-        search_start = max(0.0, sb.end_offset - 0.25)
-        search_end = sb.end_offset + 10.0
-        log.info("  Searching beep around standby at %.2fs, window %.2f-%.2fs",
-                 sb.file_offset, search_start, search_end)
+        search_start = max(0.0, sb.end_offset - config.beep_search_before)
+        search_end = sb.end_offset + config.beep_search_after
+        log.info("  Searching beep around standby at %.2fs, window %.2f-%.2fs (before=%.2f, after=%.2f)",
+                 sb.file_offset, search_start, search_end,
+                 config.beep_search_before, config.beep_search_after)
 
         beeps = detect_beeps(fi.wav_path, search_start, search_end)
+
+        record = BeepSearchRecord(
+            standby_offset=sb.file_offset,
+            search_start=search_start,
+            search_end=search_end,
+        )
+
         if beeps:
-            best = max(beeps, key=lambda b: b.energy)
+            best = max(beeps, key=lambda b: (b.confidence, b.energy))
             log.info("  All beep candidates:")
             for bc in beeps:
-                marker = " <-- CHOSEN" if bc is best else ""
+                chosen = bc is best
+                marker = " <-- CHOSEN (highest confidence+energy)" if chosen else ""
                 log.info("    t=%.3fs energy=%.2f confidence=%.3f%s",
                          bc.timestamp, bc.energy, bc.confidence, marker)
+                record.candidates.append({
+                    "timestamp": bc.timestamp,
+                    "energy": bc.energy,
+                    "confidence": bc.confidence,
+                    "chosen": chosen,
+                })
+
+            record.chosen_timestamp = best.timestamp
+            record.chosen_reason = f"highest (confidence={best.confidence:.3f}, energy={best.energy:.1f})"
+
             anchors.append(Anchor(
                 kind="beep", abs_time=epoch + best.timestamp, file_idx=file_idx,
                 file_offset=best.timestamp,
                 text=f"timer_beep (energy={best.energy:.1f})",
                 score=best.confidence * 100,
             ))
-            log.info("  ANCHOR BEEP: %.3fs (energy=%.1f, %.2fs after standby end)",
-                     best.timestamp, best.energy, best.timestamp - sb.end_offset)
+            log.info("  ANCHOR BEEP: %.3fs (energy=%.1f, confidence=%.3f, %.2fs after standby end)",
+                     best.timestamp, best.energy, best.confidence, best.timestamp - sb.end_offset)
         else:
+            record.chosen_reason = "no_candidates"
             log.warning("  No beep found around standby at %.2fs", sb.file_offset)
+
+        fi.beep_searches.append(record)
 
     # --- gunshot detection: full file ---
     log.info("  Detecting gunshots ...")
@@ -225,11 +266,15 @@ def _collect_anchors_for_file(
 
 
 # ---------------------------------------------------------------------------
-# Pass 2: assemble stages from anchors
+# Pass 2: assemble stages from anchors (confirmed first, then fallbacks)
 # ---------------------------------------------------------------------------
 
-def _assemble_stages(anchors: list[Anchor]) -> list[Stage]:
-    """Walk the sorted anchor timeline and group into stages."""
+def _assemble_stages(anchors: list[Anchor], min_clip_length: float = 5.0) -> list[Stage]:
+    """Walk the sorted anchor timeline and group into stages.
+
+    Confirmed stages (beep + end_command) are built first.
+    Fallback stages are built after, trimmed so they don't overlap confirmed ones.
+    """
     anchors.sort(key=lambda a: a.abs_time)
 
     log.info("=" * 60)
@@ -238,87 +283,198 @@ def _assemble_stages(anchors: list[Anchor]) -> list[Stage]:
         log.info("  %.2f [file %d @ %.2fs] %s '%s' score=%.0f",
                  a.abs_time, a.file_idx, a.file_offset, a.kind.upper(), a.text, a.score)
 
-    stages: list[Stage] = []
-    used_beeps: set[int] = set()  # index into anchors
+    used_beeps: set[int] = set()
     used_ends: set[int] = set()
+    confirmed: list[Stage] = []
+    fallback_no_end: list[Stage] = []
 
     beep_indices = [i for i, a in enumerate(anchors) if a.kind == "beep"]
 
+    # --- first pass: build confirmed stages (beep + end_command) ---
+    for bi in beep_indices:
+        beep = anchors[bi]
+        end_idx = None
+
+        for j in range(bi + 1, len(anchors)):
+            a = anchors[j]
+            if a.abs_time - beep.abs_time > MAX_STAGE_SECONDS:
+                break
+            if a.kind == "end_command" and j not in used_ends:
+                end_idx = j
+                break
+
+        if end_idx is not None:
+            stage = _build_stage_from_beep(anchors, bi, end_idx)
+            confirmed.append(stage)
+            used_beeps.add(bi)
+            used_ends.add(end_idx)
+            _log_stage(stage, len(confirmed), "CONFIRMED")
+
+    # --- second pass: beeps without end → fallback no-end ---
     for bi in beep_indices:
         if bi in used_beeps:
             continue
-
         beep = anchors[bi]
-        stage = Stage(beep=beep)
+        stage = _build_stage_from_beep(anchors, bi, end_idx=None)
+        stage.clip_end = beep.abs_time + FALLBACK_DURATION
+        stage.end_reason = "fallback_3min_no_end"
+        stage.complete = False
+        fallback_no_end.append(stage)
         used_beeps.add(bi)
 
-        # look backwards for the closest standby/ready before this beep (within 30s)
-        for j in range(bi - 1, -1, -1):
-            a = anchors[j]
-            if beep.abs_time - a.abs_time > 30:
-                break
-            if a.kind == "standby" and stage.standby is None:
-                stage.standby = a
-            elif a.kind == "ready" and stage.ready is None:
-                stage.ready = a
-
-        # look forward for end_command (within MAX_STAGE_SECONDS)
-        for j in range(bi + 1, len(anchors)):
-            a = anchors[j]
-            gap = a.abs_time - beep.abs_time
-            if gap > MAX_STAGE_SECONDS:
-                break
-            if a.kind == "end_command" and j not in used_ends:
-                stage.end_command = a
-                used_ends.add(j)
-                break
-            if a.kind == "gunshot":
-                stage.gunshots.append(a)
-
-        # determine clip boundaries
-        stage.clip_start = beep.abs_time
-        stage.start_reason = "beep"
-
-        if stage.end_command:
-            stage.clip_end = stage.end_command.abs_time + (stage.end_command.end_offset - stage.end_command.file_offset)
-            stage.end_reason = f"matched:{stage.end_command.text}"
-            stage.complete = True
-        else:
-            stage.clip_end = beep.abs_time + FALLBACK_DURATION
-            stage.end_reason = "fallback_3min_no_end"
+    # --- third pass: orphan end_commands → fallback no-start ---
+    fallback_no_start: list[Stage] = []
+    for i, a in enumerate(anchors):
+        if a.kind == "end_command" and i not in used_ends:
+            stage = Stage(end_command=a)
+            stage.clip_end = a.abs_time + (a.end_offset - a.file_offset)
+            stage.clip_start = stage.clip_end - FALLBACK_DURATION
+            stage.start_reason = "fallback_3min_no_start"
+            stage.end_reason = f"matched:{a.text}"
             stage.complete = False
+            for ga in anchors:
+                if ga.kind == "gunshot" and stage.clip_start <= ga.abs_time <= stage.clip_end:
+                    stage.gunshots.append(ga)
+            fallback_no_start.append(stage)
 
-        stages.append(stage)
-        _log_stage(stage, len(stages))
+    # --- trim fallbacks against confirmed intervals ---
+    confirmed_intervals = [(s.clip_start, s.clip_end) for s in confirmed]
 
-    # orphan end_commands without a beep: 3 min before end
-    orphan_ends = [
-        (i, a) for i, a in enumerate(anchors)
-        if a.kind == "end_command" and i not in used_ends
-    ]
-    for _idx, end_a in orphan_ends:
-        stage = Stage(end_command=end_a)
-        stage.clip_end = end_a.abs_time + (end_a.end_offset - end_a.file_offset)
-        stage.clip_start = stage.clip_end - FALLBACK_DURATION
-        stage.start_reason = "fallback_3min_no_start"
-        stage.end_reason = f"matched:{end_a.text}"
-        stage.complete = False
+    all_fallbacks = fallback_no_end + fallback_no_start
+    trimmed_fallbacks: list[Stage] = []
 
-        # collect gunshots in the 3min window
-        for a in anchors:
-            if a.kind == "gunshot" and stage.clip_start <= a.abs_time <= stage.clip_end:
-                stage.gunshots.append(a)
+    for stage in all_fallbacks:
+        trimmed = _trim_fallback(stage, confirmed_intervals, min_clip_length)
+        if trimmed is not None:
+            trimmed_fallbacks.append(trimmed)
+            _log_stage(trimmed, len(confirmed) + len(trimmed_fallbacks), "FALLBACK")
+        else:
+            log.warning("  Fallback stage skipped: overlaps confirmed stage and remaining interval too short")
 
-        stages.append(stage)
-        _log_stage(stage, len(stages))
-
+    stages = confirmed + trimmed_fallbacks
     stages.sort(key=lambda s: s.clip_start)
     return stages
 
 
-def _log_stage(stage: Stage, num: int) -> None:
+def _build_stage_from_beep(
+    anchors: list[Anchor],
+    beep_idx: int,
+    end_idx: int | None,
+) -> Stage:
+    """Build a stage starting from a beep anchor."""
+    beep = anchors[beep_idx]
+    stage = Stage(beep=beep)
+    stage.clip_start = beep.abs_time
+    stage.start_reason = "beep"
+
+    # look backwards for standby/ready within 30s
+    for j in range(beep_idx - 1, -1, -1):
+        a = anchors[j]
+        if beep.abs_time - a.abs_time > 30:
+            break
+        if a.kind == "standby" and stage.standby is None:
+            stage.standby = a
+        elif a.kind == "ready" and stage.ready is None:
+            stage.ready = a
+
+    if end_idx is not None:
+        end_a = anchors[end_idx]
+        stage.end_command = end_a
+        stage.clip_end = end_a.abs_time + (end_a.end_offset - end_a.file_offset)
+        stage.end_reason = f"matched:{end_a.text}"
+        stage.complete = True
+
+        # collect gunshots between beep and end
+        for j in range(beep_idx + 1, end_idx):
+            if anchors[j].kind == "gunshot":
+                stage.gunshots.append(anchors[j])
+    else:
+        # collect gunshots after beep within fallback window
+        for j in range(beep_idx + 1, len(anchors)):
+            a = anchors[j]
+            if a.abs_time - beep.abs_time > FALLBACK_DURATION:
+                break
+            if a.kind == "gunshot":
+                stage.gunshots.append(a)
+
+    return stage
+
+
+def _trim_fallback(
+    stage: Stage,
+    confirmed_intervals: list[tuple[float, float]],
+    min_clip_length: float,
+) -> Stage | None:
+    """Trim a fallback stage so it doesn't overlap any confirmed stage.
+
+    Returns the trimmed stage, or None if the remaining interval is too short.
+    """
+    orig_start = stage.clip_start
+    orig_end = stage.clip_end
+    stage.original_clip_start = orig_start
+    stage.original_clip_end = orig_end
+
+    remaining = _subtract_intervals(orig_start, orig_end, confirmed_intervals)
+
+    if not remaining:
+        stage.trimmed = True
+        stage.trimmed_by = "fully_overlapped_by_confirmed_stages"
+        return None
+
+    # pick the longest remaining interval
+    best_start, best_end = max(remaining, key=lambda iv: iv[1] - iv[0])
+    best_duration = best_end - best_start
+
+    if best_duration < min_clip_length:
+        stage.trimmed = True
+        stage.trimmed_by = f"remaining_interval_{best_duration:.1f}s_below_min_{min_clip_length:.1f}s"
+        return None
+
+    if best_start != orig_start or best_end != orig_end:
+        stage.trimmed = True
+        blockers = []
+        for cs, ce in sorted(confirmed_intervals):
+            if ce > orig_start and cs < orig_end:
+                blockers.append(f"{cs:.2f}-{ce:.2f}")
+        stage.trimmed_by = f"confirmed_stages:[{','.join(blockers)}]"
+        stage.clip_start = best_start
+        stage.clip_end = best_end
+
+        if stage.start_reason.startswith("fallback"):
+            stage.start_reason += "_trimmed"
+        if stage.end_reason.startswith("fallback"):
+            stage.end_reason += "_trimmed"
+
+        log.info("  Fallback trimmed: %.2f-%.2f -> %.2f-%.2f (avoided %s)",
+                 orig_start, orig_end, best_start, best_end, stage.trimmed_by)
+
+    return stage
+
+
+def _subtract_intervals(
+    start: float,
+    end: float,
+    exclude: list[tuple[float, float]],
+) -> list[tuple[float, float]]:
+    """Subtract excluded intervals from [start, end]. Return remaining pieces."""
+    remaining = [(start, end)]
+    for es, ee in sorted(exclude):
+        new_remaining: list[tuple[float, float]] = []
+        for rs, re in remaining:
+            if ee <= rs or es >= re:
+                new_remaining.append((rs, re))
+            else:
+                if rs < es:
+                    new_remaining.append((rs, es))
+                if re > ee:
+                    new_remaining.append((ee, re))
+        remaining = new_remaining
+    return remaining
+
+
+def _log_stage(stage: Stage, num: int, label: str = "STAGE") -> None:
     log.info("-" * 40)
-    log.info("STAGE #%d:", num)
+    log.info("%s #%d:", label, num)
 
     if stage.ready:
         log.info("  ready:    file[%d] @ %.2fs '%s'", stage.ready.file_idx, stage.ready.file_offset, stage.ready.text)
@@ -335,6 +491,10 @@ def _log_stage(stage: Stage, num: int) -> None:
     log.info("  clip:     %.2f - %.2f (%.1fs) start_reason=%s end_reason=%s complete=%s",
              stage.clip_start, stage.clip_end, stage.duration,
              stage.start_reason, stage.end_reason, stage.complete)
+
+    if stage.trimmed:
+        log.info("  trimmed:  original=%.2f-%.2f, trimmed_by=%s",
+                 stage.original_clip_start or 0, stage.original_clip_end or 0, stage.trimmed_by)
 
 
 # ---------------------------------------------------------------------------
@@ -355,7 +515,6 @@ def _cut_stages(
         log.info("=" * 60)
         log.info("CUTTING STAGE #%d", i + 1)
 
-        # determine output tag
         if stage.complete:
             tag = ""
         elif stage.beep and not stage.end_command:
@@ -371,11 +530,9 @@ def _cut_stages(
                 i + 1, tag, stage.start_reason, stage.end_reason,
             )
 
-        # apply padding
         clip_start = stage.clip_start - config.start_padding
         clip_end = stage.clip_end + config.end_padding
 
-        # find which file(s) this stage spans
         spans = _find_file_spans(clip_start, clip_end, files)
         if not spans:
             rows.append(ManifestRow(
@@ -385,7 +542,6 @@ def _cut_stages(
             ))
             continue
 
-        # primary file for naming
         primary = files[spans[0][0]]
         output_name = _build_output_name(primary.path, primary.creation_str, tag)
         output_path = output_dir / output_name
@@ -402,7 +558,6 @@ def _cut_stages(
             confidence=f"{_stage_confidence(stage):.2f}",
         )
 
-        # save debug
         _save_stage_debug(stage, i + 1, files, debug_dir)
 
         if output_path.exists() and not config.overwrite:
@@ -442,7 +597,7 @@ def _cut_stages(
                 )
             else:
                 source_paths = [files[fi].path for fi, _, _ in spans]
-                global_start = spans[0][1]  # offset into first file
+                global_start = spans[0][1]
                 global_end = sum(files[fi].duration for fi, _, _ in spans[:-1]) + spans[-1][2]
                 log.info(
                     "  Cross-file cut: %s, combined %.2f-%.2fs",
@@ -473,18 +628,14 @@ def _find_file_spans(
 ) -> list[tuple[int, float, float]]:
     """Map absolute time range to [(file_index, local_start, local_end), ...]."""
     spans: list[tuple[int, float, float]] = []
-
     for i, fi in enumerate(files):
         file_start = fi.creation_epoch
         file_end = fi.creation_epoch + fi.duration
-
         if abs_end <= file_start or abs_start >= file_end:
             continue
-
         local_start = max(0.0, abs_start - file_start)
         local_end = min(fi.duration, abs_end - file_start)
         spans.append((i, local_start, local_end))
-
     return spans
 
 
@@ -514,6 +665,16 @@ def _save_stage_debug(
     files: list[FileInfo],
     debug_dir: Path,
 ) -> None:
+    primary_idx = stage.beep.file_idx if stage.beep else (
+        stage.end_command.file_idx if stage.end_command else 0
+    )
+
+    # find beep search records from the primary file
+    beep_search_debug = []
+    if primary_idx < len(files):
+        for rec in files[primary_idx].beep_searches:
+            beep_search_debug.append(asdict(rec))
+
     data = {
         "stage_number": stage_num,
         "complete": stage.complete,
@@ -522,16 +683,18 @@ def _save_stage_debug(
         "duration": stage.duration,
         "start_reason": stage.start_reason,
         "end_reason": stage.end_reason,
+        "trimmed": stage.trimmed,
+        "trimmed_by": stage.trimmed_by,
+        "original_clip_start": stage.original_clip_start,
+        "original_clip_end": stage.original_clip_end,
         "ready": asdict(stage.ready) if stage.ready else None,
         "standby": asdict(stage.standby) if stage.standby else None,
         "beep": asdict(stage.beep) if stage.beep else None,
+        "beep_searches": beep_search_debug,
         "gunshots_count": len(stage.gunshots),
         "gunshot_times": [g.file_offset for g in stage.gunshots],
         "end_command": asdict(stage.end_command) if stage.end_command else None,
     }
-    primary_idx = stage.beep.file_idx if stage.beep else (
-        stage.end_command.file_idx if stage.end_command else 0
-    )
     stem = files[primary_idx].path.stem if primary_idx < len(files) else "unknown"
     path = debug_dir / f"{stem}_stage{stage_num}_detection.json"
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -595,10 +758,6 @@ def run_batch(
     debug_dir = config.debug_dir or output_dir / "debug"
     debug_dir.mkdir(parents=True, exist_ok=True)
 
-    # --- build file infos ---
-    # If all files have creation_time metadata, use real epochs.
-    # Otherwise assign synthetic sequential epochs so cross-file
-    # detection still works (file0 starts at 0, file1 at file0.duration, etc).
     wav_dir = debug_dir / "wav"
     wav_dir.mkdir(parents=True, exist_ok=True)
 
@@ -618,7 +777,6 @@ def run_batch(
             iso_str = creation_dt.isoformat()
         else:
             epoch = synthetic_epoch
-            # use mtime for display name if available, otherwise just index
             display_dt = get_creation_time_or_mtime(vp)
             ts_str = display_dt.strftime("%Y-%m-%d_%H-%M-%S")
             iso_str = display_dt.isoformat()
@@ -634,14 +792,10 @@ def run_batch(
         synthetic_epoch += dur
 
     if not has_all_metadata:
-        log.info(
-            "Using synthetic timeline (files placed sequentially, total %.1fs)",
-            synthetic_epoch,
-        )
+        log.info("Using synthetic timeline (files placed sequentially, total %.1fs)", synthetic_epoch)
         for i, fi in enumerate(files):
             log.info("  [%d] %s: epoch=%.1f duration=%.1fs", i, fi.path.name, fi.creation_epoch, fi.duration)
 
-    # --- pass 1: collect all anchors ---
     log.info("PASS 1: Collecting anchors from %d files ...", len(files))
     all_anchors: list[Anchor] = []
     whisper_model = None
@@ -657,19 +811,16 @@ def run_batch(
 
     log.info("PASS 1 COMPLETE: %d anchors total", len(all_anchors))
 
-    # --- pass 2: assemble stages ---
     log.info("PASS 2: Assembling stages ...")
-    stages = _assemble_stages(all_anchors)
+    stages = _assemble_stages(all_anchors, min_clip_length=config.min_clip_length)
     log.info("PASS 2 COMPLETE: %d stages found", len(stages))
 
     if not stages:
         log.warning("No stages detected across any files")
 
-    # --- pass 3: cut ---
     log.info("PASS 3: Cutting clips ...")
     rows = _cut_stages(stages, files, output_dir, config, debug_dir)
 
-    # --- cleanup wav ---
     if not config.keep_wav:
         for fi in files:
             if fi.wav_path.exists():

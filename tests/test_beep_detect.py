@@ -62,6 +62,31 @@ class TestDetectBeeps:
             wav_path.unlink(missing_ok=True)
 
 
+    def test_strongest_energy_selected_among_multiple(self) -> None:
+        sr = 16000
+        # two beeps: weak at 1.0s, strong at 2.0s
+        silence1 = np.zeros(sr * 1, dtype=np.float32)
+        weak_beep = _sine(3500, 0.1, sr, amplitude=5000)
+        gap = np.zeros(int(sr * 0.9), dtype=np.float32)
+        strong_beep = _sine(3500, 0.15, sr, amplitude=25000)
+        silence2 = np.zeros(sr * 1, dtype=np.float32)
+
+        audio = np.concatenate([silence1, weak_beep, gap, strong_beep, silence2])
+        wav_path = _make_wav(audio, sr)
+
+        try:
+            candidates = detect_beeps(wav_path, search_start=0.5, search_end=3.5)
+            assert len(candidates) >= 2, f"Expected >=2 candidates, got {len(candidates)}"
+            best_energy = max(candidates, key=lambda c: c.energy)
+            best_composite = max(candidates, key=lambda c: (c.confidence, c.energy))
+            # the strong beep should be at ~2.0s
+            assert abs(best_energy.timestamp - 2.0) < 0.2, f"Best energy at {best_energy.timestamp}, expected ~2.0"
+            # composite key should also pick the strong one
+            assert abs(best_composite.timestamp - 2.0) < 0.2
+        finally:
+            wav_path.unlink(missing_ok=True)
+
+
 class TestDetectGunshots:
     def test_finds_amplitude_spike(self) -> None:
         sr = 16000

@@ -218,6 +218,9 @@ In the debug directory (`<output_dir>/debug/` by default, or the path you pass w
 | `--max-clip-length` | `600.0` | Reject clips longer than this many seconds. |
 | `--overwrite` | off | Overwrite existing output files. Without this, existing outputs are skipped. |
 | `--dry-run` | off | Run detection and write manifest/debug files, but do not cut any video. |
+| `--phrase-threshold` | `70.0` | Fuzzy matching threshold for phrase detection (0-100). Lower = more lenient, higher = stricter. |
+| `--beep-search-before` | `0.25` | Seconds before "stand by" end to start searching for the timer beep. |
+| `--beep-search-after` | `5.0` | Seconds after "stand by" end to stop searching for the timer beep. |
 | `-v` / `--verbose` | off | Enable debug-level logging for detailed output. |
 
 ---
@@ -229,6 +232,8 @@ In the debug directory (`<output_dir>/debug/` by default, or the path you pass w
 3. **Phrase matching.** Each word sequence in the transcript is compared against known RO commands using fuzzy string matching (rapidfuzz). This handles variations in pronunciation and transcription errors.
 4. **Beep detection.** After finding "stand by", the tool analyzes a short audio window using a spectrogram to find high-frequency energy spikes (the timer beep, typically 2500-5000 Hz).
 5. **Clip boundaries.** The clip starts at the beep (or at the end of "stand by" if no beep is found). The clip ends after "hammer down and holster" (or the longest matching end phrase), plus configurable padding.
+6. **Fallback clips.** If the end command is not found, the tool cuts a 3-minute clip after the detected start and marks it as incomplete. If a start/beep is not found but an end command is, the tool cuts the 3 minutes before the end. These fallback clips are automatically trimmed so they do not overlap any confirmed stage (where both start and end were found). If trimming makes a fallback clip shorter than `--min-clip-length`, it is skipped.
+7. **Gunshot detection.** Loud transient amplitude spikes are detected as gunshots. These are used to validate that shooting actually occurred between the start and end commands.
 
 ---
 
@@ -295,6 +300,8 @@ Check the debug JSON files for detailed detection information including all cand
 - **Increase `--end-padding`** if your clips cut off too early after "hammer down and holster". The default is 2 seconds.
 - **Keep debug files when tuning.** The transcript and detection JSON files show exactly what the tool detected and why it chose specific boundaries. Use `--keep-wav` to also preserve the audio for manual inspection.
 - **Check confidence scores in manifest.csv.** Low confidence scores indicate uncertain detections.
+- **Adjust beep search window** with `--beep-search-before` and `--beep-search-after` if the beep is detected at the wrong time. The default window is -0.25s to +5.0s around the end of "stand by".
+- **Lower `--phrase-threshold`** (default 70) if speech recognition hears commands but fuzzy matching rejects them due to noise-garbled transcription.
 
 ---
 
