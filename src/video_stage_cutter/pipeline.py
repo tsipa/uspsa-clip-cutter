@@ -1192,7 +1192,7 @@ def run_batch(
             iso_str = creation_dt.isoformat()
         else:
             epoch = synthetic_epoch
-            display_dt = get_creation_time_or_mtime(vp)
+            display_dt = creation_dt if creation_dt is not None else get_creation_time_or_mtime(vp)
             ts_str = display_dt.strftime("%Y-%m-%d_%H-%M-%S")
             iso_str = display_dt.isoformat()
 
