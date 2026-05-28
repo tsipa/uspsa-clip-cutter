@@ -297,7 +297,7 @@ Check the debug JSON files for detailed detection information including all cand
 
 - **Use `--model medium` if `small` misses speech.** The medium model is significantly more accurate but about 3x slower on CPU.
 - **Use `--accurate-cut` if clip boundaries matter.** This is the default and re-encodes the video for frame-perfect cuts.
-- **Increase `--end-padding`** if your clips cut off too early after "hammer down and holster". The default is 2 seconds.
+- **Increase `--end-padding`** if your clips cut off too early after "hammer down and holster". The default is 10 seconds.
 - **Keep debug files when tuning.** The transcript and detection JSON files show exactly what the tool detected and why it chose specific boundaries. Use `--keep-wav` to also preserve the audio for manual inspection.
 - **Check confidence scores in manifest.csv.** Low confidence scores indicate uncertain detections.
 - **Adjust beep search window** with `--beep-search-before` and `--beep-search-after` if the beep is detected at the wrong time. The default window is -0.25s to +10.0s around the end of "stand by".

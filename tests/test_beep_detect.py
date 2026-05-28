@@ -86,6 +86,35 @@ class TestDetectBeeps:
             wav_path.unlink(missing_ok=True)
 
 
+    def test_rejects_broadband_gunshot_in_beep_band_window(self) -> None:
+        """A broadband impulse (gunshot) should not be accepted as a beep
+        even if it has energy in the 2500-5000 Hz band."""
+        sr = 16000
+        # 3s of quiet noise + broadband spike at 1.5s
+        audio = np.random.normal(0, 100, sr * 3).astype(np.float32)
+        spike_start = int(1.5 * sr)
+        # broadband spike: all frequencies, short duration (<10ms)
+        audio[spike_start:spike_start + 80] = 25000.0
+        wav_path = _make_wav(audio, sr)
+
+        try:
+            candidates = analyze_beep_candidates(wav_path, search_start=0.5, search_end=2.5)
+            accepted = [c for c in candidates if c.accepted]
+            assert len(accepted) == 0, (
+                f"Broadband gunshot should be rejected, but {len(accepted)} accepted: "
+                f"{[(c.timestamp, c.tonality, c.broadband_ratio, c.duration_ms) for c in accepted]}"
+            )
+            # verify rejection reasons mention expected filters
+            rejected = [c for c in candidates if not c.accepted]
+            if rejected:
+                reasons = " ".join(c.reject_reason for c in rejected)
+                assert any(r in reasons for r in ["too_short", "low_tonality", "broadband"]), (
+                    f"Expected rejection for tonal/duration/broadband, got: {reasons}"
+                )
+        finally:
+            wav_path.unlink(missing_ok=True)
+
+
 class TestDetectGunshots:
     def test_finds_amplitude_spike(self) -> None:
         sr = 16000
