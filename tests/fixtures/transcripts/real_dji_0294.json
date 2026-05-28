@@ -4,1944 +4,1551 @@
   "duration": 147.49,
   "segments": [
     {
-      "start": 1.84,
-      "end": 3.6,
-      "text": "We have to know if you are bothering our case.",
+      "start": 8.5,
+      "end": 12.36,
+      "text": "There goes our shooter. And big end. On set.",
       "words": [
         {
-          "start": 1.84,
-          "end": 1.84,
-          "word": " We",
-          "probability": 0.006833798252046108
-        },
-        {
-          "start": 1.84,
-          "end": 1.84,
-          "word": " have",
-          "probability": 0.10430242121219635
-        },
-        {
-          "start": 1.84,
-          "end": 2.02,
-          "word": " to",
-          "probability": 0.2028590887784958
-        },
-        {
-          "start": 2.02,
-          "end": 2.2,
-          "word": " know",
-          "probability": 0.010929548181593418
-        },
-        {
-          "start": 2.2,
-          "end": 2.4,
-          "word": " if",
-          "probability": 0.11848611384630203
-        },
-        {
-          "start": 2.4,
-          "end": 2.46,
-          "word": " you",
-          "probability": 0.3952377438545227
-        },
-        {
-          "start": 2.46,
-          "end": 2.64,
-          "word": " are",
-          "probability": 0.08747757226228714
-        },
-        {
-          "start": 2.64,
-          "end": 2.86,
-          "word": " bothering",
-          "probability": 0.2081308364868164
-        },
-        {
-          "start": 2.86,
-          "end": 3.06,
-          "word": " our",
-          "probability": 0.10769660770893097
-        },
-        {
-          "start": 3.06,
-          "end": 3.6,
-          "word": " case.",
-          "probability": 0.17960147559642792
-        }
-      ]
-    },
-    {
-      "start": 8.6,
-      "end": 9.72,
-      "text": "There is our shooter.",
-      "words": [
-        {
-          "start": 8.6,
-          "end": 9.02,
+          "start": 8.5,
+          "end": 8.92,
           "word": " There",
-          "probability": 0.23336102068424225
+          "probability": 0.09659509360790253
         },
         {
-          "start": 9.02,
-          "end": 9.22,
-          "word": " is",
-          "probability": 0.35174432396888733
+          "start": 8.92,
+          "end": 9.14,
+          "word": " goes",
+          "probability": 0.3024117648601532
         },
         {
-          "start": 9.22,
-          "end": 9.42,
+          "start": 9.14,
+          "end": 9.34,
           "word": " our",
-          "probability": 0.9368618726730347
+          "probability": 0.8883053064346313
         },
         {
-          "start": 9.42,
-          "end": 9.72,
+          "start": 9.34,
+          "end": 9.64,
           "word": " shooter.",
-          "probability": 0.06793224066495895
-        }
-      ]
-    },
-    {
-      "start": 10.88,
-      "end": 12.56,
-      "text": "And big ass is on set.",
-      "words": [
+          "probability": 0.13793408870697021
+        },
         {
-          "start": 10.88,
-          "end": 11.0,
+          "start": 10.44,
+          "end": 10.86,
           "word": " And",
-          "probability": 0.39351847767829895
+          "probability": 0.5018482208251953
         },
         {
-          "start": 11.0,
-          "end": 11.24,
+          "start": 10.86,
+          "end": 11.12,
           "word": " big",
-          "probability": 0.29535025358200073
+          "probability": 0.5346764922142029
         },
         {
-          "start": 11.24,
-          "end": 11.48,
-          "word": " ass",
-          "probability": 0.12361863255500793
+          "start": 11.12,
+          "end": 11.38,
+          "word": " end.",
+          "probability": 0.1796077936887741
         },
         {
-          "start": 11.48,
-          "end": 11.84,
-          "word": " is",
-          "probability": 0.08324472606182098
+          "start": 11.76,
+          "end": 12.18,
+          "word": " On",
+          "probability": 0.625235915184021
         },
         {
-          "start": 11.84,
-          "end": 12.34,
-          "word": " on",
-          "probability": 0.4150180220603943
-        },
-        {
-          "start": 12.34,
-          "end": 12.56,
+          "start": 12.18,
+          "end": 12.36,
           "word": " set.",
-          "probability": 0.1433822214603424
+          "probability": 0.514319896697998
         }
       ]
     },
     {
-      "start": 16.64,
-      "end": 19.82,
-      "text": "Yeah, just hold that two triggers to see if you can handle when you are through.",
+      "start": 16.7,
+      "end": 21.58,
+      "text": "Just pull the two triggers if you can, when you return to zero. And this is like something you'll need to just...",
       "words": [
         {
-          "start": 16.64,
-          "end": 17.06,
-          "word": " Yeah,",
-          "probability": 0.05202013999223709
+          "start": 16.7,
+          "end": 17.12,
+          "word": " Just",
+          "probability": 0.09539181739091873
         },
         {
-          "start": 17.06,
-          "end": 17.28,
-          "word": " just",
-          "probability": 0.8261604905128479
+          "start": 17.12,
+          "end": 17.42,
+          "word": " pull",
+          "probability": 0.31470954418182373
         },
         {
-          "start": 17.28,
-          "end": 17.5,
-          "word": " hold",
-          "probability": 0.5184474587440491
+          "start": 17.42,
+          "end": 17.54,
+          "word": " the",
+          "probability": 0.5367829203605652
         },
         {
-          "start": 17.5,
-          "end": 17.64,
-          "word": " that",
-          "probability": 0.20241279900074005
-        },
-        {
-          "start": 17.64,
-          "end": 17.84,
+          "start": 17.54,
+          "end": 17.76,
           "word": " two",
-          "probability": 0.6706582307815552
+          "probability": 0.9275359511375427
         },
         {
-          "start": 17.84,
-          "end": 18.14,
+          "start": 17.76,
+          "end": 18.12,
           "word": " triggers",
-          "probability": 0.7186031341552734
+          "probability": 0.9733264446258545
         },
         {
-          "start": 18.14,
+          "start": 18.12,
+          "end": 18.32,
+          "word": " if",
+          "probability": 0.03777170181274414
+        },
+        {
+          "start": 18.32,
           "end": 18.44,
-          "word": " to",
-          "probability": 0.25285568833351135
+          "word": " you",
+          "probability": 0.9280284643173218
         },
         {
           "start": 18.44,
-          "end": 18.6,
-          "word": " see",
-          "probability": 0.26213160157203674
+          "end": 18.8,
+          "word": " can,",
+          "probability": 0.9210603833198547
         },
         {
-          "start": 18.6,
-          "end": 18.74,
-          "word": " if",
-          "probability": 0.45219871401786804
-        },
-        {
-          "start": 18.74,
-          "end": 18.86,
-          "word": " you",
-          "probability": 0.382663369178772
-        },
-        {
-          "start": 18.86,
-          "end": 18.96,
-          "word": " can",
-          "probability": 0.7277200818061829
-        },
-        {
-          "start": 18.96,
-          "end": 19.12,
-          "word": " handle",
-          "probability": 0.2406020611524582
-        },
-        {
-          "start": 19.12,
-          "end": 19.46,
+          "start": 19.02,
+          "end": 19.4,
           "word": " when",
-          "probability": 0.5680636167526245
+          "probability": 0.9170051217079163
         },
         {
-          "start": 19.46,
-          "end": 19.56,
+          "start": 19.4,
+          "end": 19.5,
           "word": " you",
-          "probability": 0.8394805788993835
+          "probability": 0.6812204718589783
         },
         {
-          "start": 19.56,
-          "end": 19.64,
-          "word": " are",
-          "probability": 0.3889336585998535
+          "start": 19.5,
+          "end": 19.66,
+          "word": " return",
+          "probability": 0.22659564018249512
         },
         {
-          "start": 19.64,
-          "end": 19.82,
-          "word": " through.",
-          "probability": 0.06380192935466766
-        }
-      ]
-    },
-    {
-      "start": 20.08,
-      "end": 21.28,
-      "text": "And this is like something you'll meet.",
-      "words": [
+          "start": 19.66,
+          "end": 19.86,
+          "word": " to",
+          "probability": 0.5427144169807434
+        },
         {
-          "start": 20.08,
-          "end": 20.24,
+          "start": 19.86,
+          "end": 20.06,
+          "word": " zero.",
+          "probability": 0.5821753144264221
+        },
+        {
+          "start": 20.16,
+          "end": 20.2,
           "word": " And",
-          "probability": 0.6077495217323303
+          "probability": 0.690854549407959
         },
         {
-          "start": 20.24,
-          "end": 20.38,
+          "start": 20.2,
+          "end": 20.32,
           "word": " this",
-          "probability": 0.9673712253570557
+          "probability": 0.9616795778274536
         },
         {
-          "start": 20.38,
-          "end": 20.5,
+          "start": 20.32,
+          "end": 20.4,
           "word": " is",
-          "probability": 0.9771819710731506
+          "probability": 0.9810302257537842
         },
         {
-          "start": 20.5,
-          "end": 20.64,
+          "start": 20.4,
+          "end": 20.58,
           "word": " like",
-          "probability": 0.5537217259407043
+          "probability": 0.549211323261261
         },
         {
-          "start": 20.64,
-          "end": 20.8,
+          "start": 20.58,
+          "end": 20.78,
           "word": " something",
-          "probability": 0.8933767676353455
+          "probability": 0.8926993012428284
         },
         {
-          "start": 20.8,
-          "end": 21.12,
+          "start": 20.78,
+          "end": 21.06,
           "word": " you'll",
-          "probability": 0.5811890214681625
+          "probability": 0.8685279190540314
         },
         {
-          "start": 21.12,
-          "end": 21.28,
-          "word": " meet.",
-          "probability": 0.644433319568634
+          "start": 21.06,
+          "end": 21.26,
+          "word": " need",
+          "probability": 0.7651337385177612
+        },
+        {
+          "start": 21.26,
+          "end": 21.4,
+          "word": " to",
+          "probability": 0.9125410914421082
+        },
+        {
+          "start": 21.4,
+          "end": 21.58,
+          "word": " just...",
+          "probability": 0.38461320847272873
         }
       ]
     },
     {
-      "start": 21.54,
-      "end": 22.02,
+      "start": 21.58,
+      "end": 21.92,
       "text": "Make ready.",
       "words": [
         {
-          "start": 21.54,
-          "end": 21.8,
+          "start": 21.58,
+          "end": 21.68,
           "word": " Make",
-          "probability": 0.7404410243034363
+          "probability": 0.4881618916988373
         },
         {
-          "start": 21.8,
-          "end": 22.02,
+          "start": 21.68,
+          "end": 21.92,
           "word": " ready.",
-          "probability": 0.9492530226707458
+          "probability": 0.9858036041259766
         }
       ]
     },
     {
-      "start": 23.02,
-      "end": 25.54,
-      "text": "Like go bang bang, see if that's understandable.",
+      "start": 22.86,
+      "end": 25.78,
+      "text": "Like go bang bang. So you guys understand how...",
       "words": [
         {
-          "start": 23.02,
-          "end": 23.34,
+          "start": 22.86,
+          "end": 23.28,
           "word": " Like",
-          "probability": 0.47495609521865845
+          "probability": 0.32779693603515625
         },
         {
-          "start": 23.34,
-          "end": 23.52,
+          "start": 23.28,
+          "end": 23.42,
           "word": " go",
-          "probability": 0.4465976357460022
+          "probability": 0.5428992509841919
         },
         {
-          "start": 23.52,
-          "end": 23.72,
+          "start": 23.42,
+          "end": 23.68,
           "word": " bang",
-          "probability": 0.5195862054824829
+          "probability": 0.9270597696304321
         },
         {
-          "start": 23.72,
-          "end": 23.92,
-          "word": " bang,",
-          "probability": 0.7110854387283325
+          "start": 23.68,
+          "end": 23.82,
+          "word": " bang.",
+          "probability": 0.7564837336540222
+        },
+        {
+          "start": 23.88,
+          "end": 24.08,
+          "word": " So",
+          "probability": 0.7146912217140198
         },
         {
           "start": 24.08,
-          "end": 24.16,
-          "word": " see",
-          "probability": 0.7928636074066162
+          "end": 24.14,
+          "word": " you",
+          "probability": 0.6625916957855225
         },
         {
-          "start": 24.16,
-          "end": 24.56,
-          "word": " if",
-          "probability": 0.3063642382621765
+          "start": 24.14,
+          "end": 24.62,
+          "word": " guys",
+          "probability": 0.6781175136566162
         },
         {
-          "start": 24.56,
-          "end": 24.84,
-          "word": " that's",
-          "probability": 0.6690782010555267
+          "start": 24.62,
+          "end": 24.98,
+          "word": " understand",
+          "probability": 0.5757923722267151
         },
         {
-          "start": 24.84,
-          "end": 25.54,
-          "word": " understandable.",
-          "probability": 0.374342679977417
+          "start": 24.98,
+          "end": 25.78,
+          "word": " how...",
+          "probability": 0.6938808560371399
         }
       ]
     },
     {
-      "start": 25.94,
-      "end": 26.6,
-      "text": "Still like crazy.",
+      "start": 25.78,
+      "end": 26.54,
+      "text": "Still make ready.",
       "words": [
         {
-          "start": 25.94,
-          "end": 26.26,
+          "start": 25.78,
+          "end": 26.14,
           "word": " Still",
-          "probability": 0.28229591250419617
+          "probability": 0.5988945960998535
         },
         {
-          "start": 26.26,
-          "end": 26.42,
-          "word": " like",
-          "probability": 0.1936637908220291
+          "start": 26.14,
+          "end": 26.36,
+          "word": " make",
+          "probability": 0.9056162238121033
         },
         {
-          "start": 26.42,
-          "end": 26.6,
-          "word": " crazy.",
-          "probability": 0.25215694308280945
-        }
-      ]
-    },
-    {
-      "start": 26.96,
-      "end": 27.08,
-      "text": "Yep.",
-      "words": [
-        {
-          "start": 26.96,
-          "end": 27.08,
-          "word": " Yep.",
-          "probability": 0.5309357047080994
-        }
-      ]
-    },
-    {
-      "start": 27.38,
-      "end": 27.74,
-      "text": "Make ready.",
-      "words": [
-        {
-          "start": 27.38,
-          "end": 27.52,
-          "word": " Make",
-          "probability": 0.7411504983901978
-        },
-        {
-          "start": 27.52,
-          "end": 27.74,
+          "start": 26.36,
+          "end": 26.54,
           "word": " ready.",
-          "probability": 0.9839756488800049
+          "probability": 0.9895003437995911
         }
       ]
     },
     {
-      "start": 27.74,
-      "end": 30.44,
-      "text": "If you didn't know the gun was blue, you know it was a second shot.",
+      "start": 26.76,
+      "end": 27.66,
+      "text": "Yep. Make ready.",
       "words": [
         {
-          "start": 27.74,
-          "end": 27.74,
-          "word": " If",
-          "probability": 0.000617070822045207
+          "start": 26.76,
+          "end": 27.04,
+          "word": " Yep.",
+          "probability": 0.7885203957557678
         },
         {
-          "start": 27.74,
-          "end": 27.74,
-          "word": " you",
-          "probability": 0.5079823136329651
+          "start": 27.06,
+          "end": 27.46,
+          "word": " Make",
+          "probability": 0.9533343315124512
         },
         {
-          "start": 27.74,
-          "end": 27.84,
-          "word": " didn't",
-          "probability": 0.5278025530278683
-        },
-        {
-          "start": 27.84,
-          "end": 28.04,
-          "word": " know",
-          "probability": 0.3759515881538391
-        },
-        {
-          "start": 28.04,
-          "end": 28.14,
-          "word": " the",
-          "probability": 0.6622436046600342
-        },
-        {
-          "start": 28.14,
-          "end": 28.36,
-          "word": " gun",
-          "probability": 0.9793257713317871
-        },
-        {
-          "start": 28.36,
-          "end": 28.52,
-          "word": " was",
-          "probability": 0.8399929404258728
-        },
-        {
-          "start": 28.52,
-          "end": 28.72,
-          "word": " blue,",
-          "probability": 0.4753280282020569
-        },
-        {
-          "start": 29.06,
-          "end": 29.28,
-          "word": " you",
-          "probability": 0.7436021566390991
-        },
-        {
-          "start": 29.28,
-          "end": 29.46,
-          "word": " know",
-          "probability": 0.5404219031333923
-        },
-        {
-          "start": 29.46,
-          "end": 29.6,
-          "word": " it",
-          "probability": 0.16345278918743134
-        },
-        {
-          "start": 29.6,
-          "end": 29.74,
-          "word": " was",
-          "probability": 0.6187554001808167
-        },
-        {
-          "start": 29.74,
-          "end": 29.88,
-          "word": " a",
-          "probability": 0.4519330561161041
-        },
-        {
-          "start": 29.88,
-          "end": 30.08,
-          "word": " second",
-          "probability": 0.5947813987731934
-        },
-        {
-          "start": 30.08,
-          "end": 30.44,
-          "word": " shot.",
-          "probability": 0.5562471747398376
+          "start": 27.46,
+          "end": 27.66,
+          "word": " ready.",
+          "probability": 0.9960119724273682
         }
       ]
     },
     {
-      "start": 31.3,
-      "end": 35.2,
-      "text": "So, if you can actually do this with those two targets,",
+      "start": 41.94,
+      "end": 43.16,
+      "text": "Oh shit, I apologize.",
       "words": [
         {
-          "start": 31.3,
-          "end": 31.66,
-          "word": " So,",
-          "probability": 0.606059193611145
+          "start": 41.94,
+          "end": 42.34,
+          "word": " Oh",
+          "probability": 0.2259049266576767
         },
         {
-          "start": 32.18,
-          "end": 32.36,
-          "word": " if",
-          "probability": 0.31940364837646484
+          "start": 42.34,
+          "end": 42.74,
+          "word": " shit,",
+          "probability": 0.6363139152526855
         },
         {
-          "start": 32.36,
-          "end": 32.94,
-          "word": " you",
-          "probability": 0.9676408171653748
+          "start": 42.78,
+          "end": 42.92,
+          "word": " I",
+          "probability": 0.834129810333252
         },
         {
-          "start": 32.94,
-          "end": 33.08,
-          "word": " can",
-          "probability": 0.774563193321228
-        },
-        {
-          "start": 33.08,
-          "end": 33.46,
-          "word": " actually",
-          "probability": 0.43345603346824646
-        },
-        {
-          "start": 33.46,
-          "end": 33.7,
-          "word": " do",
-          "probability": 0.043597009032964706
-        },
-        {
-          "start": 33.7,
-          "end": 33.88,
-          "word": " this",
-          "probability": 0.22605718672275543
-        },
-        {
-          "start": 33.88,
-          "end": 34.08,
-          "word": " with",
-          "probability": 0.23251865804195404
-        },
-        {
-          "start": 34.08,
-          "end": 34.64,
-          "word": " those",
-          "probability": 0.3037562072277069
-        },
-        {
-          "start": 34.64,
-          "end": 34.88,
-          "word": " two",
-          "probability": 0.9568391442298889
-        },
-        {
-          "start": 34.88,
-          "end": 35.2,
-          "word": " targets,",
-          "probability": 0.9735589027404785
+          "start": 42.92,
+          "end": 43.16,
+          "word": " apologize.",
+          "probability": 0.08932728320360184
         }
       ]
     },
     {
-      "start": 35.48,
-      "end": 37.56,
-      "text": "you might as well just back and wall to let it work on those bullets.",
-      "words": [
-        {
-          "start": 35.48,
-          "end": 35.54,
-          "word": " you",
-          "probability": 0.19594314694404602
-        },
-        {
-          "start": 35.54,
-          "end": 35.62,
-          "word": " might",
-          "probability": 0.8811439275741577
-        },
-        {
-          "start": 35.62,
-          "end": 35.72,
-          "word": " as",
-          "probability": 0.4874245822429657
-        },
-        {
-          "start": 35.72,
-          "end": 35.82,
-          "word": " well",
-          "probability": 0.9706612825393677
-        },
-        {
-          "start": 35.82,
-          "end": 35.92,
-          "word": " just",
-          "probability": 0.8579472303390503
-        },
-        {
-          "start": 35.92,
-          "end": 36.06,
-          "word": " back",
-          "probability": 0.18070150911808014
-        },
-        {
-          "start": 36.06,
-          "end": 36.2,
-          "word": " and",
-          "probability": 0.5247147083282471
-        },
-        {
-          "start": 36.2,
-          "end": 36.38,
-          "word": " wall",
-          "probability": 0.4429754912853241
-        },
-        {
-          "start": 36.38,
-          "end": 36.54,
-          "word": " to",
-          "probability": 0.06685007363557816
-        },
-        {
-          "start": 36.54,
-          "end": 36.66,
-          "word": " let",
-          "probability": 0.8737062811851501
-        },
-        {
-          "start": 36.66,
-          "end": 36.78,
-          "word": " it",
-          "probability": 0.8511432409286499
-        },
-        {
-          "start": 36.78,
-          "end": 36.94,
-          "word": " work",
-          "probability": 0.11337075382471085
-        },
-        {
-          "start": 36.94,
-          "end": 37.2,
-          "word": " on",
-          "probability": 0.8079947829246521
-        },
-        {
-          "start": 37.2,
-          "end": 37.32,
-          "word": " those",
-          "probability": 0.25161615014076233
-        },
-        {
-          "start": 37.32,
-          "end": 37.56,
-          "word": " bullets.",
-          "probability": 0.09721537679433823
-        }
-      ]
-    },
-    {
-      "start": 38.4,
-      "end": 40.44,
-      "text": "If you're a little more careful with those targets,",
-      "words": [
-        {
-          "start": 38.4,
-          "end": 38.76,
-          "word": " If",
-          "probability": 0.13080811500549316
-        },
-        {
-          "start": 38.76,
-          "end": 38.98,
-          "word": " you're",
-          "probability": 0.6239234358072281
-        },
-        {
-          "start": 38.98,
-          "end": 39.06,
-          "word": " a",
-          "probability": 0.5786605477333069
-        },
-        {
-          "start": 39.06,
-          "end": 39.14,
-          "word": " little",
-          "probability": 0.9780540466308594
-        },
-        {
-          "start": 39.14,
-          "end": 39.34,
-          "word": " more",
-          "probability": 0.9449558258056641
-        },
-        {
-          "start": 39.34,
-          "end": 39.68,
-          "word": " careful",
-          "probability": 0.9978349804878235
-        },
-        {
-          "start": 39.68,
-          "end": 39.96,
-          "word": " with",
-          "probability": 0.25522100925445557
-        },
-        {
-          "start": 39.96,
-          "end": 40.12,
-          "word": " those",
-          "probability": 0.8064207434654236
-        },
-        {
-          "start": 40.12,
-          "end": 40.44,
-          "word": " targets,",
-          "probability": 0.9949470162391663
-        }
-      ]
-    },
-    {
-      "start": 40.68,
-      "end": 41.52,
-      "text": "you might as well shoot.",
-      "words": [
-        {
-          "start": 40.68,
-          "end": 40.76,
-          "word": " you",
-          "probability": 0.28612422943115234
-        },
-        {
-          "start": 40.76,
-          "end": 40.96,
-          "word": " might",
-          "probability": 0.26089099049568176
-        },
-        {
-          "start": 40.96,
-          "end": 41.32,
-          "word": " as",
-          "probability": 0.6971453428268433
-        },
-        {
-          "start": 41.32,
-          "end": 41.42,
-          "word": " well",
-          "probability": 0.9973500967025757
-        },
-        {
-          "start": 41.42,
-          "end": 41.52,
-          "word": " shoot.",
-          "probability": 0.3488260805606842
-        }
-      ]
-    },
-    {
-      "start": 42.3,
-      "end": 42.82,
-      "text": "Oh, shit.",
-      "words": [
-        {
-          "start": 42.3,
-          "end": 42.48,
-          "word": " Oh,",
-          "probability": 0.2952040135860443
-        },
-        {
-          "start": 42.58,
-          "end": 42.82,
-          "word": " shit.",
-          "probability": 0.8968783617019653
-        }
-      ]
-    },
-    {
-      "start": 42.94,
-      "end": 43.4,
-      "text": "That was good.",
-      "words": [
-        {
-          "start": 42.94,
-          "end": 43.02,
-          "word": " That",
-          "probability": 0.35387834906578064
-        },
-        {
-          "start": 43.02,
-          "end": 43.18,
-          "word": " was",
-          "probability": 0.6125916242599487
-        },
-        {
-          "start": 43.18,
-          "end": 43.4,
-          "word": " good.",
-          "probability": 0.2757609486579895
-        }
-      ]
-    },
-    {
-      "start": 44.28,
-      "end": 45.32,
+      "start": 44.2,
+      "end": 45.28,
       "text": "Go bang bang, bang bang.",
       "words": [
         {
-          "start": 44.28,
-          "end": 44.54,
+          "start": 44.2,
+          "end": 44.42,
           "word": " Go",
-          "probability": 0.031249796971678734
+          "probability": 0.0002697987365536392
         },
         {
-          "start": 44.54,
-          "end": 44.7,
+          "start": 44.42,
+          "end": 44.64,
           "word": " bang",
-          "probability": 0.08217313885688782
+          "probability": 0.25796759128570557
         },
         {
-          "start": 44.7,
-          "end": 44.84,
+          "start": 44.64,
+          "end": 44.88,
           "word": " bang,",
-          "probability": 0.8803067803382874
+          "probability": 0.8482653498649597
         },
         {
-          "start": 45.0,
-          "end": 45.12,
+          "start": 44.92,
+          "end": 45.1,
           "word": " bang",
-          "probability": 0.9936283230781555
+          "probability": 0.9837681651115417
         },
         {
-          "start": 45.12,
-          "end": 45.32,
+          "start": 45.1,
+          "end": 45.28,
           "word": " bang.",
-          "probability": 0.9938884377479553
+          "probability": 0.9928812980651855
         }
       ]
     },
     {
-      "start": 45.82,
-      "end": 47.28,
-      "text": "Like aim one and then shoot.",
+      "start": 45.72,
+      "end": 47.26,
+      "text": "Like aim once, and then shoot.",
       "words": [
         {
-          "start": 45.82,
-          "end": 46.02,
+          "start": 45.72,
+          "end": 45.88,
           "word": " Like",
-          "probability": 0.8635274767875671
+          "probability": 0.0021251984871923923
         },
         {
-          "start": 46.02,
-          "end": 46.32,
+          "start": 45.88,
+          "end": 46.24,
           "word": " aim",
-          "probability": 0.8454513549804688
+          "probability": 0.8167180418968201
         },
         {
-          "start": 46.32,
-          "end": 46.6,
-          "word": " one",
-          "probability": 0.8056196570396423
+          "start": 46.24,
+          "end": 46.54,
+          "word": " once,",
+          "probability": 0.30500906705856323
         },
         {
-          "start": 46.6,
-          "end": 46.98,
+          "start": 46.66,
+          "end": 46.86,
           "word": " and",
-          "probability": 0.26117298007011414
+          "probability": 0.34989458322525024
         },
         {
-          "start": 46.98,
-          "end": 47.14,
+          "start": 46.86,
+          "end": 47.06,
           "word": " then",
-          "probability": 0.2587149143218994
+          "probability": 0.776120126247406
         },
         {
-          "start": 47.14,
-          "end": 47.28,
+          "start": 47.06,
+          "end": 47.26,
           "word": " shoot.",
-          "probability": 0.8473386168479919
+          "probability": 0.6124871969223022
         }
       ]
     },
     {
-      "start": 48.18,
-      "end": 49.84,
+      "start": 48.08,
+      "end": 49.82,
       "text": "And this is something you'll need to practice.",
       "words": [
         {
-          "start": 48.18,
-          "end": 48.54,
+          "start": 48.08,
+          "end": 48.48,
           "word": " And",
-          "probability": 0.48997440934181213
+          "probability": 0.5148099064826965
         },
         {
-          "start": 48.54,
-          "end": 48.76,
+          "start": 48.48,
+          "end": 48.72,
           "word": " this",
-          "probability": 0.5230088233947754
+          "probability": 0.9626293182373047
         },
         {
-          "start": 48.76,
+          "start": 48.72,
           "end": 48.88,
           "word": " is",
-          "probability": 0.963272213935852
+          "probability": 0.9886384606361389
         },
         {
           "start": 48.88,
-          "end": 49.06,
+          "end": 49.02,
           "word": " something",
-          "probability": 0.9752449989318848
+          "probability": 0.9899539947509766
         },
         {
-          "start": 49.06,
+          "start": 49.02,
           "end": 49.28,
           "word": " you'll",
-          "probability": 0.7014171481132507
+          "probability": 0.8797227740287781
         },
         {
           "start": 49.28,
-          "end": 49.4,
+          "end": 49.36,
           "word": " need",
-          "probability": 0.9930552840232849
+          "probability": 0.9967617988586426
         },
         {
-          "start": 49.4,
-          "end": 49.56,
+          "start": 49.36,
+          "end": 49.46,
           "word": " to",
-          "probability": 0.9919589757919312
+          "probability": 0.9860730171203613
         },
         {
-          "start": 49.56,
-          "end": 49.84,
+          "start": 49.46,
+          "end": 49.82,
           "word": " practice.",
-          "probability": 0.962905764579773
+          "probability": 0.9925228953361511
         }
       ]
     },
     {
-      "start": 50.18,
-      "end": 51.0,
-      "text": "Like last time.",
+      "start": 50.04,
+      "end": 50.9,
+      "text": "Last time.",
       "words": [
         {
-          "start": 50.18,
-          "end": 50.18,
-          "word": " Like",
-          "probability": 0.18560470640659332
+          "start": 50.04,
+          "end": 50.44,
+          "word": " Last",
+          "probability": 0.2827276885509491
         },
         {
-          "start": 50.18,
-          "end": 50.74,
-          "word": " last",
-          "probability": 0.17886102199554443
-        },
-        {
-          "start": 50.74,
-          "end": 51.0,
+          "start": 50.44,
+          "end": 50.9,
           "word": " time.",
-          "probability": 0.9828634858131409
+          "probability": 0.9856245517730713
         }
       ]
     },
     {
-      "start": 51.14,
-      "end": 52.38,
-      "text": "Because you know where the second shot is.",
+      "start": 51.02,
+      "end": 52.86,
+      "text": "Because you know where the second shot is going to happen.",
       "words": [
         {
-          "start": 51.14,
-          "end": 51.24,
+          "start": 51.02,
+          "end": 51.22,
           "word": " Because",
-          "probability": 0.1690126359462738
+          "probability": 0.2891232669353485
         },
         {
-          "start": 51.24,
-          "end": 51.36,
+          "start": 51.22,
+          "end": 51.28,
           "word": " you",
-          "probability": 0.8956066966056824
+          "probability": 0.8752109408378601
         },
         {
-          "start": 51.36,
-          "end": 51.48,
+          "start": 51.28,
+          "end": 51.4,
           "word": " know",
-          "probability": 0.8832660913467407
+          "probability": 0.8124457001686096
         },
         {
-          "start": 51.48,
-          "end": 51.62,
+          "start": 51.4,
+          "end": 51.56,
           "word": " where",
-          "probability": 0.8610338568687439
+          "probability": 0.9472468495368958
         },
         {
-          "start": 51.62,
-          "end": 51.74,
+          "start": 51.56,
+          "end": 51.66,
           "word": " the",
-          "probability": 0.9057866334915161
+          "probability": 0.9749388694763184
         },
         {
-          "start": 51.74,
-          "end": 51.92,
+          "start": 51.66,
+          "end": 51.88,
           "word": " second",
-          "probability": 0.9748099446296692
+          "probability": 0.988364577293396
         },
         {
-          "start": 51.92,
-          "end": 52.24,
+          "start": 51.88,
+          "end": 52.22,
           "word": " shot",
-          "probability": 0.9325829744338989
+          "probability": 0.9724721312522888
         },
         {
-          "start": 52.24,
-          "end": 52.38,
-          "word": " is.",
-          "probability": 0.6958917379379272
-        }
-      ]
-    },
-    {
-      "start": 52.52,
-      "end": 54.5,
-      "text": "Well, you can actually shoot it up.",
-      "words": [
+          "start": 52.22,
+          "end": 52.36,
+          "word": " is",
+          "probability": 0.8757551312446594
+        },
         {
-          "start": 52.52,
+          "start": 52.36,
+          "end": 52.56,
+          "word": " going",
+          "probability": 0.1721721589565277
+        },
+        {
+          "start": 52.56,
           "end": 52.7,
-          "word": " Well,",
-          "probability": 0.27123814821243286
+          "word": " to",
+          "probability": 0.6796768307685852
         },
         {
-          "start": 52.78,
-          "end": 53.24,
-          "word": " you",
-          "probability": 0.14940832555294037
-        },
-        {
-          "start": 53.24,
-          "end": 53.5,
-          "word": " can",
-          "probability": 0.47351306676864624
-        },
-        {
-          "start": 53.5,
-          "end": 53.94,
-          "word": " actually",
-          "probability": 0.6248866319656372
-        },
-        {
-          "start": 53.94,
-          "end": 54.22,
-          "word": " shoot",
-          "probability": 0.6185457706451416
-        },
-        {
-          "start": 54.22,
-          "end": 54.36,
-          "word": " it",
-          "probability": 0.40501174330711365
-        },
-        {
-          "start": 54.36,
-          "end": 54.5,
-          "word": " up.",
-          "probability": 0.24893459677696228
+          "start": 52.7,
+          "end": 52.86,
+          "word": " happen.",
+          "probability": 0.2779853045940399
         }
       ]
     },
     {
-      "start": 55.32,
-      "end": 56.28,
-      "text": "So, aim one.",
+      "start": 53.62,
+      "end": 56.22,
+      "text": "So, aim once.",
       "words": [
         {
-          "start": 55.32,
-          "end": 55.68,
+          "start": 53.62,
+          "end": 54.02,
           "word": " So,",
-          "probability": 0.9357592463493347
+          "probability": 0.34009692072868347
         },
         {
-          "start": 55.8,
-          "end": 55.98,
+          "start": 55.56,
+          "end": 55.9,
           "word": " aim",
-          "probability": 0.8604812622070312
+          "probability": 0.9659431576728821
         },
         {
-          "start": 55.98,
-          "end": 56.28,
-          "word": " one.",
-          "probability": 0.9936153888702393
+          "start": 55.9,
+          "end": 56.22,
+          "word": " once.",
+          "probability": 0.8495038151741028
         }
       ]
     },
     {
-      "start": 57.04,
-      "end": 64.21,
+      "start": 62.69,
+      "end": 63.95,
       "text": "I don't want to...",
       "words": [
         {
-          "start": 57.04,
-          "end": 57.36,
+          "start": 62.69,
+          "end": 63.17,
           "word": " I",
-          "probability": 0.02903876081109047
+          "probability": 0.05351749062538147
         },
         {
-          "start": 62.19,
-          "end": 63.69,
+          "start": 63.17,
+          "end": 63.65,
           "word": " don't",
-          "probability": 0.8335542678833008
+          "probability": 0.8559383749961853
         },
         {
-          "start": 63.69,
-          "end": 63.85,
+          "start": 63.65,
+          "end": 63.71,
           "word": " want",
-          "probability": 0.6333200931549072
+          "probability": 0.5466174483299255
         },
         {
-          "start": 63.85,
-          "end": 64.21,
+          "start": 63.71,
+          "end": 63.95,
           "word": " to...",
-          "probability": 0.5481162220239639
+          "probability": 0.5296043008565903
         }
       ]
     },
     {
-      "start": 64.21,
-      "end": 66.51,
-      "text": "Don't slow down and think it's in the line.",
+      "start": 64.49,
+      "end": 69.13,
+      "text": "Don't slow down and think it's in the blind. Think about, is the dot on the ground?",
       "words": [
         {
-          "start": 64.21,
-          "end": 64.93,
+          "start": 64.49,
+          "end": 64.81,
           "word": " Don't",
-          "probability": 0.7656193971633911
+          "probability": 0.7651492059230804
         },
         {
-          "start": 64.93,
-          "end": 65.15,
+          "start": 64.81,
+          "end": 65.05,
           "word": " slow",
-          "probability": 0.8815941214561462
+          "probability": 0.9814292192459106
         },
         {
-          "start": 65.15,
-          "end": 65.43,
+          "start": 65.05,
+          "end": 65.37,
           "word": " down",
-          "probability": 0.9833735227584839
+          "probability": 0.9917639493942261
         },
         {
-          "start": 65.43,
-          "end": 65.61,
+          "start": 65.37,
+          "end": 65.51,
           "word": " and",
-          "probability": 0.46151822805404663
+          "probability": 0.6024794578552246
         },
         {
-          "start": 65.61,
-          "end": 65.79,
+          "start": 65.51,
+          "end": 65.73,
           "word": " think",
-          "probability": 0.9247258305549622
+          "probability": 0.9658064842224121
         },
         {
-          "start": 65.79,
-          "end": 66.01,
+          "start": 65.73,
+          "end": 65.95,
           "word": " it's",
-          "probability": 0.5426902770996094
+          "probability": 0.6821880042552948
+        },
+        {
+          "start": 65.95,
+          "end": 66.01,
+          "word": " in",
+          "probability": 0.4045219123363495
         },
         {
           "start": 66.01,
-          "end": 66.05,
-          "word": " in",
-          "probability": 0.10779497772455215
-        },
-        {
-          "start": 66.05,
-          "end": 66.19,
+          "end": 66.13,
           "word": " the",
-          "probability": 0.9182319641113281
+          "probability": 0.9372521042823792
         },
         {
-          "start": 66.19,
-          "end": 66.51,
-          "word": " line.",
-          "probability": 0.29002493619918823
-        }
-      ]
-    },
-    {
-      "start": 66.91,
-      "end": 69.19,
-      "text": "Think about is a dot on the ground.",
-      "words": [
+          "start": 66.13,
+          "end": 66.45,
+          "word": " blind.",
+          "probability": 0.4067928194999695
+        },
         {
-          "start": 66.91,
-          "end": 67.15,
+          "start": 66.65,
+          "end": 67.13,
           "word": " Think",
-          "probability": 0.9708587527275085
+          "probability": 0.9763463735580444
         },
         {
-          "start": 67.15,
-          "end": 67.45,
-          "word": " about",
-          "probability": 0.9864116907119751
+          "start": 67.13,
+          "end": 67.43,
+          "word": " about,",
+          "probability": 0.985230028629303
         },
         {
-          "start": 67.45,
-          "end": 67.77,
+          "start": 67.49,
+          "end": 67.69,
           "word": " is",
-          "probability": 0.3413006067276001
+          "probability": 0.8229395747184753
         },
         {
-          "start": 67.77,
-          "end": 67.91,
-          "word": " a",
-          "probability": 0.4944682717323303
-        },
-        {
-          "start": 67.91,
-          "end": 68.17,
-          "word": " dot",
-          "probability": 0.8804599046707153
-        },
-        {
-          "start": 68.17,
-          "end": 68.79,
-          "word": " on",
-          "probability": 0.9537969827651978
-        },
-        {
-          "start": 68.79,
-          "end": 68.97,
+          "start": 67.69,
+          "end": 67.81,
           "word": " the",
-          "probability": 0.9854269027709961
+          "probability": 0.6884734630584717
         },
         {
-          "start": 68.97,
-          "end": 69.19,
-          "word": " ground.",
-          "probability": 0.8821137547492981
+          "start": 67.81,
+          "end": 68.11,
+          "word": " dot",
+          "probability": 0.8493407368659973
+        },
+        {
+          "start": 68.11,
+          "end": 68.59,
+          "word": " on",
+          "probability": 0.981882631778717
+        },
+        {
+          "start": 68.59,
+          "end": 68.85,
+          "word": " the",
+          "probability": 0.9991812109947205
+        },
+        {
+          "start": 68.85,
+          "end": 69.13,
+          "word": " ground?",
+          "probability": 0.9970743656158447
         }
       ]
     },
     {
-      "start": 69.65,
-      "end": 72.77,
-      "text": "It doesn't need to be absolutely level.",
+      "start": 70.31,
+      "end": 72.75,
+      "text": "It doesn't need to be absolutely round.",
       "words": [
         {
-          "start": 69.65,
-          "end": 69.65,
+          "start": 70.31,
+          "end": 70.79,
           "word": " It",
-          "probability": 0.5611728429794312
+          "probability": 0.7578955292701721
         },
         {
-          "start": 69.65,
-          "end": 71.19,
+          "start": 70.79,
+          "end": 71.15,
           "word": " doesn't",
-          "probability": 0.9870541095733643
+          "probability": 0.9991582632064819
         },
         {
-          "start": 71.19,
-          "end": 71.39,
+          "start": 71.15,
+          "end": 71.31,
           "word": " need",
-          "probability": 0.9009881615638733
+          "probability": 0.906367301940918
         },
         {
-          "start": 71.39,
-          "end": 71.51,
+          "start": 71.31,
+          "end": 71.43,
           "word": " to",
-          "probability": 0.9887352585792542
+          "probability": 0.9980453252792358
         },
         {
-          "start": 71.51,
-          "end": 71.61,
+          "start": 71.43,
+          "end": 71.57,
           "word": " be",
-          "probability": 0.9777146577835083
+          "probability": 0.9974703788757324
         },
         {
-          "start": 71.61,
-          "end": 72.27,
+          "start": 71.57,
+          "end": 72.01,
           "word": " absolutely",
-          "probability": 0.9399338364601135
+          "probability": 0.9330959320068359
         },
         {
-          "start": 72.27,
-          "end": 72.77,
-          "word": " level.",
-          "probability": 0.17928743362426758
+          "start": 72.01,
+          "end": 72.75,
+          "word": " round.",
+          "probability": 0.1435181200504303
         }
       ]
     },
     {
-      "start": 76.85,
-      "end": 78.15,
+      "start": 76.77,
+      "end": 78.09,
       "text": "Are you ready?",
       "words": [
         {
-          "start": 76.85,
-          "end": 77.17,
+          "start": 76.77,
+          "end": 77.25,
           "word": " Are",
-          "probability": 0.45840489864349365
+          "probability": 0.8292661905288696
         },
         {
-          "start": 77.17,
-          "end": 77.81,
+          "start": 77.25,
+          "end": 77.73,
           "word": " you",
-          "probability": 0.9982752799987793
+          "probability": 0.9993324875831604
         },
         {
-          "start": 77.81,
-          "end": 78.15,
+          "start": 77.73,
+          "end": 78.09,
           "word": " ready?",
-          "probability": 0.9958393573760986
+          "probability": 0.9990429282188416
         }
       ]
     },
     {
-      "start": 78.39,
-      "end": 78.53,
+      "start": 78.29,
+      "end": 78.49,
       "text": "Ready.",
       "words": [
         {
-          "start": 78.39,
-          "end": 78.53,
+          "start": 78.29,
+          "end": 78.49,
           "word": " Ready.",
-          "probability": 0.11551691591739655
+          "probability": 0.5685644745826721
         }
       ]
     },
     {
-      "start": 79.31,
-      "end": 80.13,
+      "start": 79.05,
+      "end": 79.93,
       "text": "Stand by.",
       "words": [
         {
-          "start": 79.31,
-          "end": 79.67,
+          "start": 79.05,
+          "end": 79.53,
           "word": " Stand",
-          "probability": 0.9733676314353943
+          "probability": 0.9886407852172852
         },
         {
-          "start": 79.67,
-          "end": 80.13,
+          "start": 79.53,
+          "end": 79.93,
           "word": " by.",
-          "probability": 0.8638971447944641
+          "probability": 0.8700973987579346
         }
       ]
     },
     {
-      "start": 98.0,
-      "end": 99.66,
-      "text": "Range is clear.",
+      "start": 80.71,
+      "end": 80.95,
+      "text": "I know.",
       "words": [
         {
-          "start": 98.0,
-          "end": 98.64,
+          "start": 80.71,
+          "end": 80.79,
+          "word": " I",
+          "probability": 0.15437929332256317
+        },
+        {
+          "start": 80.79,
+          "end": 80.95,
+          "word": " know.",
+          "probability": 0.8994528651237488
+        }
+      ]
+    },
+    {
+      "start": 81.53,
+      "end": 96.7,
+      "text": "If finished, unload and shoot. If it's clear, hammer down and holster.",
+      "words": [
+        {
+          "start": 81.53,
+          "end": 82.01,
+          "word": " If",
+          "probability": 0.0011484755668789148
+        },
+        {
+          "start": 92.8,
+          "end": 93.08,
+          "word": " finished,",
+          "probability": 1.3095524082018528e-05
+        },
+        {
+          "start": 93.18,
+          "end": 93.54,
+          "word": " unload",
+          "probability": 0.0033551116939634085
+        },
+        {
+          "start": 93.54,
+          "end": 93.7,
+          "word": " and",
+          "probability": 0.9473839402198792
+        },
+        {
+          "start": 93.7,
+          "end": 93.9,
+          "word": " shoot.",
+          "probability": 0.8677030801773071
+        },
+        {
+          "start": 94.82,
+          "end": 95.3,
+          "word": " If",
+          "probability": 0.12093930691480637
+        },
+        {
+          "start": 95.3,
+          "end": 95.48,
+          "word": " it's",
+          "probability": 0.7392924576997757
+        },
+        {
+          "start": 95.48,
+          "end": 95.58,
+          "word": " clear,",
+          "probability": 0.9678507447242737
+        },
+        {
+          "start": 95.68,
+          "end": 95.88,
+          "word": " hammer",
+          "probability": 0.9946451187133789
+        },
+        {
+          "start": 95.88,
+          "end": 96.06,
+          "word": " down",
+          "probability": 0.9780036211013794
+        },
+        {
+          "start": 96.06,
+          "end": 96.32,
+          "word": " and",
+          "probability": 0.13004449009895325
+        },
+        {
+          "start": 96.32,
+          "end": 96.7,
+          "word": " holster.",
+          "probability": 0.31957880515255965
+        }
+      ]
+    },
+    {
+      "start": 98.48,
+      "end": 100.84,
+      "text": "Range is clear. 9-5-6.",
+      "words": [
+        {
+          "start": 98.48,
+          "end": 98.96,
           "word": " Range",
-          "probability": 0.29177412390708923
+          "probability": 0.9533032178878784
         },
         {
-          "start": 98.64,
-          "end": 99.28,
+          "start": 98.96,
+          "end": 99.18,
           "word": " is",
-          "probability": 0.9881894588470459
+          "probability": 0.9987877011299133
         },
         {
-          "start": 99.28,
-          "end": 99.66,
+          "start": 99.18,
+          "end": 99.52,
           "word": " clear.",
-          "probability": 0.8773207664489746
+          "probability": 0.997116208076477
+        },
+        {
+          "start": 99.86,
+          "end": 100.3,
+          "word": " 9",
+          "probability": 0.56626296043396
+        },
+        {
+          "start": 100.3,
+          "end": 100.6,
+          "word": "-5",
+          "probability": 0.8899986743927002
+        },
+        {
+          "start": 100.6,
+          "end": 100.84,
+          "word": "-6.",
+          "probability": 0.9982720017433167
         }
       ]
     },
     {
-      "start": 100.06,
-      "end": 100.98,
-      "text": "Nine, five, six.",
+      "start": 101.08,
+      "end": 102.3,
+      "text": "Time, 9-5-6.",
       "words": [
         {
-          "start": 100.06,
-          "end": 100.28,
-          "word": " Nine,",
-          "probability": 0.15956027805805206
+          "start": 101.08,
+          "end": 101.54,
+          "word": " Time,",
+          "probability": 0.7716489434242249
         },
         {
-          "start": 100.48,
-          "end": 100.62,
-          "word": " five,",
-          "probability": 0.9752202033996582
+          "start": 101.62,
+          "end": 101.78,
+          "word": " 9",
+          "probability": 0.9992557168006897
         },
         {
-          "start": 100.8,
-          "end": 100.98,
-          "word": " six.",
-          "probability": 0.9566738605499268
+          "start": 101.78,
+          "end": 102.08,
+          "word": "-5",
+          "probability": 0.9995598793029785
+        },
+        {
+          "start": 102.08,
+          "end": 102.3,
+          "word": "-6.",
+          "probability": 0.9999582171440125
         }
       ]
     },
     {
-      "start": 100.98,
-      "end": 102.44,
-      "text": "Five, nine, five, six.",
-      "words": [
-        {
-          "start": 100.98,
-          "end": 101.62,
-          "word": " Five,",
-          "probability": 0.0047063883394002914
-        },
-        {
-          "start": 101.72,
-          "end": 101.84,
-          "word": " nine,",
-          "probability": 0.947557270526886
-        },
-        {
-          "start": 101.94,
-          "end": 102.1,
-          "word": " five,",
-          "probability": 0.9936738014221191
-        },
-        {
-          "start": 102.16,
-          "end": 102.44,
-          "word": " six.",
-          "probability": 0.9980884194374084
-        }
-      ]
-    },
-    {
-      "start": 102.96,
-      "end": 103.46,
+      "start": 103.28,
+      "end": 103.44,
       "text": "Two alpha.",
       "words": [
         {
-          "start": 102.96,
-          "end": 103.2,
+          "start": 103.28,
+          "end": 103.44,
           "word": " Two",
-          "probability": 0.7707498669624329
+          "probability": 0.23826369643211365
         },
         {
-          "start": 103.2,
-          "end": 103.46,
+          "start": 103.44,
+          "end": 103.44,
           "word": " alpha.",
-          "probability": 0.26997247338294983
+          "probability": 0.16708891093730927
         }
       ]
     },
     {
-      "start": 103.82,
-      "end": 104.56,
+      "start": 103.68,
+      "end": 104.46,
       "text": "Two alpha.",
       "words": [
         {
-          "start": 103.82,
-          "end": 104.2,
+          "start": 103.68,
+          "end": 104.04,
           "word": " Two",
-          "probability": 0.7573583722114563
+          "probability": 0.7506692409515381
         },
         {
-          "start": 104.2,
-          "end": 104.56,
+          "start": 104.04,
+          "end": 104.46,
           "word": " alpha.",
-          "probability": 0.857764720916748
+          "probability": 0.8877251148223877
         }
       ]
     },
     {
-      "start": 107.58,
-      "end": 108.38,
+      "start": 105.32,
+      "end": 108.28,
       "text": "Alpha Charlie.",
       "words": [
         {
-          "start": 107.58,
-          "end": 108.0,
+          "start": 105.32,
+          "end": 105.68,
           "word": " Alpha",
-          "probability": 0.9124655723571777
+          "probability": 0.7076401114463806
         },
         {
-          "start": 108.0,
-          "end": 108.38,
+          "start": 107.92,
+          "end": 108.28,
           "word": " Charlie.",
-          "probability": 0.819606602191925
+          "probability": 0.7938521504402161
         }
       ]
     },
     {
-      "start": 108.7,
-      "end": 109.48,
+      "start": 108.58,
+      "end": 109.32,
       "text": "Alpha Charlie.",
       "words": [
         {
-          "start": 108.7,
-          "end": 109.06,
+          "start": 108.58,
+          "end": 108.94,
           "word": " Alpha",
-          "probability": 0.9222910404205322
+          "probability": 0.7848296165466309
         },
         {
-          "start": 109.06,
-          "end": 109.48,
+          "start": 108.94,
+          "end": 109.32,
           "word": " Charlie.",
-          "probability": 0.994728147983551
+          "probability": 0.9931282997131348
         }
       ]
     },
     {
-      "start": 111.84,
-      "end": 112.56,
+      "start": 111.78,
+      "end": 112.5,
       "text": "Two alpha.",
       "words": [
         {
-          "start": 111.84,
-          "end": 112.26,
+          "start": 111.78,
+          "end": 112.14,
           "word": " Two",
-          "probability": 0.9243248701095581
+          "probability": 0.9430558085441589
         },
         {
-          "start": 112.26,
-          "end": 112.56,
+          "start": 112.14,
+          "end": 112.5,
           "word": " alpha.",
-          "probability": 0.8971594572067261
+          "probability": 0.925626814365387
         }
       ]
     },
     {
-      "start": 112.9,
-      "end": 113.38,
+      "start": 112.68,
+      "end": 113.3,
       "text": "Two alpha.",
       "words": [
         {
-          "start": 112.9,
-          "end": 113.06,
+          "start": 112.68,
+          "end": 112.96,
           "word": " Two",
-          "probability": 0.9613667130470276
+          "probability": 0.9771692156791687
         },
         {
-          "start": 113.06,
-          "end": 113.38,
+          "start": 112.96,
+          "end": 113.3,
           "word": " alpha.",
-          "probability": 0.9173426032066345
+          "probability": 0.9645118117332458
         }
       ]
     },
     {
-      "start": 116.77,
-      "end": 117.29,
+      "start": 116.61,
+      "end": 117.31,
       "text": "Two alpha.",
       "words": [
         {
-          "start": 116.77,
-          "end": 117.03,
+          "start": 116.61,
+          "end": 116.97,
           "word": " Two",
-          "probability": 0.9322850108146667
+          "probability": 0.9444690346717834
         },
         {
-          "start": 117.03,
-          "end": 117.29,
+          "start": 116.97,
+          "end": 117.31,
           "word": " alpha.",
-          "probability": 0.8997443318367004
+          "probability": 0.7671927809715271
         }
       ]
     },
     {
-      "start": 117.41,
-      "end": 117.99,
+      "start": 117.33,
+      "end": 117.69,
       "text": "Two alpha.",
       "words": [
         {
-          "start": 117.41,
-          "end": 117.53,
+          "start": 117.33,
+          "end": 117.51,
           "word": " Two",
-          "probability": 0.5957600474357605
+          "probability": 0.9191704988479614
         },
         {
-          "start": 117.53,
-          "end": 117.99,
+          "start": 117.51,
+          "end": 117.69,
           "word": " alpha.",
-          "probability": 0.8839760422706604
+          "probability": 0.03992679342627525
         }
       ]
     },
     {
-      "start": 119.27,
-      "end": 119.91,
-      "text": "Oh, man.",
+      "start": 117.69,
+      "end": 117.85,
+      "text": "Two Mike's.",
       "words": [
         {
-          "start": 119.27,
-          "end": 119.69,
-          "word": " Oh,",
-          "probability": 0.9171813130378723
+          "start": 117.69,
+          "end": 117.69,
+          "word": " Two",
+          "probability": 0.4215591847896576
         },
         {
-          "start": 119.71,
-          "end": 119.91,
-          "word": " man.",
-          "probability": 0.9739429950714111
+          "start": 117.69,
+          "end": 117.85,
+          "word": " Mike's.",
+          "probability": 0.5708966553211212
         }
       ]
     },
     {
-      "start": 120.13,
-      "end": 120.61,
-      "text": "Fuck, no.",
+      "start": 117.87,
+      "end": 117.93,
+      "text": "Two alpha.",
       "words": [
         {
-          "start": 120.13,
-          "end": 120.25,
-          "word": " Fuck,",
-          "probability": 0.785866916179657
+          "start": 117.87,
+          "end": 117.87,
+          "word": " Two",
+          "probability": 0.1742693930864334
         },
         {
-          "start": 120.39,
-          "end": 120.61,
+          "start": 117.87,
+          "end": 117.93,
+          "word": " alpha.",
+          "probability": 0.9421787261962891
+        }
+      ]
+    },
+    {
+      "start": 119.11,
+      "end": 120.41,
+      "text": "Oh man, fuck, no.",
+      "words": [
+        {
+          "start": 119.11,
+          "end": 119.47,
+          "word": " Oh",
+          "probability": 0.9404591917991638
+        },
+        {
+          "start": 119.47,
+          "end": 119.81,
+          "word": " man,",
+          "probability": 0.7419349551200867
+        },
+        {
+          "start": 119.91,
+          "end": 120.19,
+          "word": " fuck,",
+          "probability": 0.8862917423248291
+        },
+        {
+          "start": 120.23,
+          "end": 120.41,
           "word": " no.",
-          "probability": 0.9833022952079773
+          "probability": 0.9836447238922119
         }
       ]
     },
     {
-      "start": 120.79,
-      "end": 121.63,
+      "start": 120.65,
+      "end": 121.29,
       "text": "No, no, no.",
       "words": [
         {
-          "start": 120.79,
-          "end": 120.93,
+          "start": 120.65,
+          "end": 120.89,
           "word": " No,",
-          "probability": 0.5809980630874634
+          "probability": 0.7414078116416931
         },
         {
-          "start": 121.03,
-          "end": 121.19,
+          "start": 120.89,
+          "end": 121.13,
           "word": " no,",
-          "probability": 0.9896571040153503
+          "probability": 0.9906274080276489
         },
         {
-          "start": 121.19,
-          "end": 121.63,
+          "start": 121.13,
+          "end": 121.29,
           "word": " no.",
-          "probability": 0.9956615567207336
+          "probability": 0.9400584697723389
         }
       ]
     },
     {
-      "start": 123.59,
-      "end": 124.93,
-      "text": "There's many rounds that you shot.",
+      "start": 122.21,
+      "end": 124.85,
+      "text": "How many rounds did you shot?",
       "words": [
         {
-          "start": 123.59,
-          "end": 124.01,
-          "word": " There's",
-          "probability": 0.5909816175699234
+          "start": 122.21,
+          "end": 122.57,
+          "word": " How",
+          "probability": 0.5674499273300171
         },
         {
-          "start": 124.01,
-          "end": 124.15,
+          "start": 123.85,
+          "end": 124.07,
           "word": " many",
-          "probability": 0.7805356383323669
+          "probability": 0.9984607696533203
         },
         {
-          "start": 124.15,
-          "end": 124.43,
+          "start": 124.07,
+          "end": 124.37,
           "word": " rounds",
-          "probability": 0.9852083921432495
+          "probability": 0.9864349365234375
         },
         {
-          "start": 124.43,
-          "end": 124.59,
-          "word": " that",
-          "probability": 0.4058309495449066
+          "start": 124.37,
+          "end": 124.53,
+          "word": " did",
+          "probability": 0.45995083451271057
         },
         {
-          "start": 124.59,
-          "end": 124.67,
+          "start": 124.53,
+          "end": 124.65,
           "word": " you",
-          "probability": 0.9514222145080566
+          "probability": 0.9697443842887878
         },
         {
-          "start": 124.67,
-          "end": 124.93,
-          "word": " shot.",
-          "probability": 0.985149621963501
+          "start": 124.65,
+          "end": 124.85,
+          "word": " shot?",
+          "probability": 0.8803222179412842
         }
       ]
     },
     {
-      "start": 125.05,
-      "end": 126.15,
+      "start": 124.93,
+      "end": 126.07,
       "text": "I thought you were shooting at it.",
       "words": [
         {
-          "start": 125.05,
-          "end": 125.07,
+          "start": 124.93,
+          "end": 125.05,
           "word": " I",
-          "probability": 0.9987978935241699
+          "probability": 0.997865617275238
         },
         {
-          "start": 125.07,
-          "end": 125.25,
+          "start": 125.05,
+          "end": 125.23,
           "word": " thought",
-          "probability": 0.9971261620521545
+          "probability": 0.9834785461425781
         },
         {
-          "start": 125.25,
-          "end": 125.45,
+          "start": 125.23,
+          "end": 125.37,
           "word": " you",
-          "probability": 0.9926882982254028
+          "probability": 0.995019793510437
         },
         {
-          "start": 125.45,
-          "end": 125.55,
+          "start": 125.37,
+          "end": 125.49,
           "word": " were",
-          "probability": 0.9794220924377441
+          "probability": 0.9416183829307556
         },
         {
-          "start": 125.55,
-          "end": 125.79,
+          "start": 125.49,
+          "end": 125.73,
           "word": " shooting",
-          "probability": 0.9675915837287903
+          "probability": 0.9484516382217407
         },
         {
-          "start": 125.79,
-          "end": 126.01,
+          "start": 125.73,
+          "end": 125.93,
           "word": " at",
-          "probability": 0.9975488781929016
+          "probability": 0.9963250756263733
         },
         {
-          "start": 126.01,
-          "end": 126.15,
+          "start": 125.93,
+          "end": 126.07,
           "word": " it.",
-          "probability": 0.9944218993186951
+          "probability": 0.9955680966377258
         }
       ]
     },
     {
-      "start": 130.99,
-      "end": 131.95,
+      "start": 131.01,
+      "end": 131.73,
+      "text": "Did you?",
+      "words": [
+        {
+          "start": 131.01,
+          "end": 131.37,
+          "word": " Did",
+          "probability": 0.37350398302078247
+        },
+        {
+          "start": 131.37,
+          "end": 131.73,
+          "word": " you?",
+          "probability": 0.9914880990982056
+        }
+      ]
+    },
+    {
+      "start": 131.89,
+      "end": 132.57,
       "text": "Did you shoot?",
       "words": [
         {
-          "start": 130.99,
-          "end": 131.41,
+          "start": 131.89,
+          "end": 132.25,
           "word": " Did",
-          "probability": 0.3749464750289917
+          "probability": 0.6179993152618408
         },
         {
-          "start": 131.41,
-          "end": 131.83,
+          "start": 132.25,
+          "end": 132.45,
           "word": " you",
-          "probability": 0.9956289529800415
+          "probability": 0.9991959929466248
         },
         {
-          "start": 131.83,
-          "end": 131.95,
+          "start": 132.45,
+          "end": 132.57,
           "word": " shoot?",
-          "probability": 0.5872436165809631
+          "probability": 0.4743473529815674
         }
       ]
     },
     {
-      "start": 132.19,
-      "end": 132.61,
-      "text": "Did you shoot?",
-      "words": [
-        {
-          "start": 132.19,
-          "end": 132.33,
-          "word": " Did",
-          "probability": 0.2180521935224533
-        },
-        {
-          "start": 132.33,
-          "end": 132.51,
-          "word": " you",
-          "probability": 0.9973776340484619
-        },
-        {
-          "start": 132.51,
-          "end": 132.61,
-          "word": " shoot?",
-          "probability": 0.6448817253112793
-        }
-      ]
-    },
-    {
-      "start": 132.83,
-      "end": 134.23,
+      "start": 132.69,
+      "end": 134.19,
       "text": "No, you don't have enough holes on that one.",
       "words": [
         {
-          "start": 132.83,
-          "end": 132.99,
+          "start": 132.69,
+          "end": 132.93,
           "word": " No,",
-          "probability": 0.9622425436973572
+          "probability": 0.9681538939476013
         },
         {
-          "start": 133.03,
-          "end": 133.13,
+          "start": 132.99,
+          "end": 133.07,
           "word": " you",
-          "probability": 0.9917020201683044
+          "probability": 0.9971116781234741
         },
         {
-          "start": 133.13,
-          "end": 133.23,
+          "start": 133.07,
+          "end": 133.21,
           "word": " don't",
-          "probability": 0.9979841709136963
+          "probability": 0.9962194859981537
         },
         {
-          "start": 133.23,
-          "end": 133.39,
+          "start": 133.21,
+          "end": 133.33,
           "word": " have",
-          "probability": 0.998925507068634
+          "probability": 0.9955735206604004
         },
         {
-          "start": 133.39,
-          "end": 133.53,
+          "start": 133.33,
+          "end": 133.49,
           "word": " enough",
-          "probability": 0.9956472516059875
+          "probability": 0.9897985458374023
         },
         {
-          "start": 133.53,
-          "end": 133.79,
+          "start": 133.49,
+          "end": 133.75,
           "word": " holes",
-          "probability": 0.5904785394668579
+          "probability": 0.9324241280555725
         },
         {
-          "start": 133.79,
-          "end": 133.97,
+          "start": 133.75,
+          "end": 133.91,
           "word": " on",
-          "probability": 0.977196455001831
+          "probability": 0.9864402413368225
         },
         {
-          "start": 133.97,
-          "end": 134.13,
+          "start": 133.91,
+          "end": 134.05,
           "word": " that",
-          "probability": 0.9950124621391296
+          "probability": 0.9957156777381897
         },
         {
-          "start": 134.13,
-          "end": 134.23,
+          "start": 134.05,
+          "end": 134.19,
           "word": " one.",
-          "probability": 0.6937388181686401
+          "probability": 0.9645208716392517
         }
       ]
     },
     {
-      "start": 134.45,
-      "end": 135.23,
+      "start": 134.25,
+      "end": 135.27,
       "text": "You shot it too many times.",
       "words": [
         {
-          "start": 134.45,
-          "end": 134.45,
+          "start": 134.25,
+          "end": 134.33,
           "word": " You",
-          "probability": 0.7654018998146057
+          "probability": 0.6335656642913818
         },
         {
-          "start": 134.45,
-          "end": 134.57,
+          "start": 134.33,
+          "end": 134.49,
           "word": " shot",
-          "probability": 0.8745505213737488
+          "probability": 0.8180955648422241
         },
         {
-          "start": 134.57,
-          "end": 134.69,
+          "start": 134.49,
+          "end": 134.61,
           "word": " it",
-          "probability": 0.9230753779411316
+          "probability": 0.8655072450637817
         },
         {
-          "start": 134.69,
-          "end": 134.85,
+          "start": 134.61,
+          "end": 134.77,
           "word": " too",
-          "probability": 0.9852778315544128
+          "probability": 0.9414337873458862
         },
         {
-          "start": 134.85,
-          "end": 134.99,
+          "start": 134.77,
+          "end": 134.95,
           "word": " many",
-          "probability": 0.9976697564125061
+          "probability": 0.9992786049842834
         },
         {
-          "start": 134.99,
-          "end": 135.23,
+          "start": 134.95,
+          "end": 135.27,
           "word": " times.",
-          "probability": 0.9962629675865173
+          "probability": 0.9981241822242737
         }
       ]
     },
     {
-      "start": 137.03,
-      "end": 137.49,
-      "text": "You did it.",
+      "start": 136.87,
+      "end": 137.35,
+      "text": "You do?",
       "words": [
         {
-          "start": 137.03,
-          "end": 137.27,
+          "start": 136.87,
+          "end": 137.23,
           "word": " You",
-          "probability": 0.03347673639655113
+          "probability": 0.7142439484596252
         },
         {
-          "start": 137.27,
-          "end": 137.39,
-          "word": " did",
-          "probability": 0.05441607907414436
-        },
+          "start": 137.23,
+          "end": 137.35,
+          "word": " do?",
+          "probability": 0.6983440518379211
+        }
+      ]
+    },
+    {
+      "start": 137.45,
+      "end": 137.49,
+      "text": "Yeah.",
+      "words": [
         {
-          "start": 137.39,
+          "start": 137.45,
           "end": 137.49,
-          "word": " it.",
-          "probability": 0.5363456010818481
+          "word": " Yeah.",
+          "probability": 0.1806185394525528
         }
       ]
     }

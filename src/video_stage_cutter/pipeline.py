@@ -285,6 +285,43 @@ def _collect_anchors_for_file(
 # Pass 2: assemble stages from anchors (confirmed first, then fallbacks)
 # ---------------------------------------------------------------------------
 
+def _dedup_anchors(anchors: list[Anchor], time_tolerance: float = 10.0) -> list[Anchor]:
+    """Within each *time_tolerance* window, keep only the best anchor per kind.
+
+    Best = longest text (longest phrase match), then highest score.
+    Beeps and gunshots are not deduped (they use different logic).
+    """
+    dedup_kinds = {"ready", "standby", "end_command"}
+    passthrough = [a for a in anchors if a.kind not in dedup_kinds]
+    to_dedup = [a for a in anchors if a.kind in dedup_kinds]
+
+    result: list[Anchor] = []
+    for kind in dedup_kinds:
+        kind_anchors = sorted([a for a in to_dedup if a.kind == kind], key=lambda a: a.abs_time)
+        if not kind_anchors:
+            continue
+        cluster: list[Anchor] = [kind_anchors[0]]
+        for a in kind_anchors[1:]:
+            if a.abs_time - cluster[0].abs_time < time_tolerance:
+                cluster.append(a)
+            else:
+                best = max(cluster, key=lambda x: (len(x.text), x.score))
+                result.append(best)
+                if len(cluster) > 1:
+                    log.info("  Anchor dedup: %s — kept '%s' (score=%.0f), dropped %d others within %.1fs",
+                             kind, best.text, best.score, len(cluster) - 1, time_tolerance)
+                cluster = [a]
+        best = max(cluster, key=lambda x: (len(x.text), x.score))
+        result.append(best)
+        if len(cluster) > 1:
+            log.info("  Anchor dedup: %s — kept '%s' (score=%.0f), dropped %d others within %.1fs",
+                     kind, best.text, best.score, len(cluster) - 1, time_tolerance)
+
+    result.extend(passthrough)
+    result.sort(key=lambda a: a.abs_time)
+    return result
+
+
 def _assemble_stages(anchors: list[Anchor], min_clip_length: float = 5.0) -> list[Stage]:
     """Walk the sorted anchor timeline and group into stages.
 
@@ -293,8 +330,11 @@ def _assemble_stages(anchors: list[Anchor], min_clip_length: float = 5.0) -> lis
     """
     anchors.sort(key=lambda a: a.abs_time)
 
+    # dedup anchors: within 10s, keep only the best per kind
+    anchors = _dedup_anchors(anchors, time_tolerance=10.0)
+
     log.info("=" * 60)
-    log.info("ASSEMBLY: %d total anchors on global timeline", len(anchors))
+    log.info("ASSEMBLY: %d anchors on global timeline (after dedup)", len(anchors))
     for a in anchors:
         log.info("  %.2f [file %d @ %.2fs] %s '%s' score=%.0f",
                  a.abs_time, a.file_idx, a.file_offset, a.kind.upper(), a.text, a.score)

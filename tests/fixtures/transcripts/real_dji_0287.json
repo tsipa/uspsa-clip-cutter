@@ -1,164 +1,158 @@
 {
   "source": "DJI_0287.MP4",
   "language": "en",
-  "duration": 88.8,
+  "duration": 88.74,
   "segments": [
     {
       "start": 61.87,
-      "end": 64.97,
-      "text": "Made up. Made up in alpha. Cool. Complete.",
+      "end": 64.85,
+      "text": "You made up an alpha. Cool. Complete.",
       "words": [
         {
           "start": 61.87,
-          "end": 62.23,
-          "word": " Made",
-          "probability": 0.023145148530602455
+          "end": 62.03,
+          "word": " You",
+          "probability": 0.06719382852315903
         },
         {
-          "start": 62.23,
-          "end": 62.39,
-          "word": " up.",
-          "probability": 0.6239998936653137
+          "start": 62.03,
+          "end": 62.19,
+          "word": " made",
+          "probability": 0.8136049509048462
+        },
+        {
+          "start": 62.19,
+          "end": 62.31,
+          "word": " up",
+          "probability": 0.4451065957546234
+        },
+        {
+          "start": 62.31,
+          "end": 62.47,
+          "word": " an",
+          "probability": 0.7873711585998535
         },
         {
           "start": 62.47,
-          "end": 62.59,
-          "word": " Made",
-          "probability": 0.4210194945335388
-        },
-        {
-          "start": 62.59,
-          "end": 62.73,
-          "word": " up",
-          "probability": 0.9788712859153748
-        },
-        {
-          "start": 62.73,
-          "end": 62.83,
-          "word": " in",
-          "probability": 0.32631707191467285
-        },
-        {
-          "start": 62.83,
-          "end": 62.99,
+          "end": 62.91,
           "word": " alpha.",
-          "probability": 0.7669531106948853
+          "probability": 0.8862187266349792
         },
         {
-          "start": 63.29,
-          "end": 63.41,
+          "start": 63.09,
+          "end": 63.37,
           "word": " Cool.",
-          "probability": 0.9513144493103027
+          "probability": 0.7921015620231628
         },
         {
-          "start": 64.61,
-          "end": 64.97,
+          "start": 64.47,
+          "end": 64.85,
           "word": " Complete.",
-          "probability": 0.4517328143119812
+          "probability": 0.4232456088066101
         }
       ]
     },
     {
-      "start": 74.16,
-      "end": 76.06,
-      "text": "Oh really? And then your third shot was a shot?",
+      "start": 74.04,
+      "end": 76.3,
+      "text": "Oh really? And then your third shot was a drone attack.",
       "words": [
         {
-          "start": 74.16,
-          "end": 74.4,
+          "start": 74.04,
+          "end": 74.42,
           "word": " Oh",
-          "probability": 0.2561390697956085
+          "probability": 0.3207107186317444
         },
         {
-          "start": 74.4,
-          "end": 74.64,
+          "start": 74.42,
+          "end": 74.48,
           "word": " really?",
-          "probability": 0.7182610034942627
+          "probability": 0.4618329107761383
+        },
+        {
+          "start": 74.74,
+          "end": 74.86,
+          "word": " And",
+          "probability": 0.7384549975395203
         },
         {
           "start": 74.86,
-          "end": 74.94,
-          "word": " And",
-          "probability": 0.7685615420341492
-        },
-        {
-          "start": 74.94,
-          "end": 75.04,
+          "end": 74.98,
           "word": " then",
-          "probability": 0.9834892749786377
+          "probability": 0.9618042707443237
         },
         {
-          "start": 75.04,
-          "end": 75.14,
+          "start": 74.98,
+          "end": 75.08,
           "word": " your",
-          "probability": 0.9526131749153137
+          "probability": 0.9721013903617859
         },
         {
-          "start": 75.14,
-          "end": 75.36,
+          "start": 75.08,
+          "end": 75.32,
           "word": " third",
-          "probability": 0.972426176071167
+          "probability": 0.9611481428146362
         },
         {
-          "start": 75.36,
-          "end": 75.6,
+          "start": 75.32,
+          "end": 75.54,
           "word": " shot",
-          "probability": 0.9916436076164246
+          "probability": 0.9977797865867615
         },
         {
-          "start": 75.6,
-          "end": 75.78,
+          "start": 75.54,
+          "end": 75.7,
           "word": " was",
-          "probability": 0.5361517071723938
+          "probability": 0.9106917977333069
+        },
+        {
+          "start": 75.7,
+          "end": 75.78,
+          "word": " a",
+          "probability": 0.680290699005127
         },
         {
           "start": 75.78,
-          "end": 75.88,
-          "word": " a",
-          "probability": 0.49535471200942993
+          "end": 76.02,
+          "word": " drone",
+          "probability": 0.40574172139167786
         },
         {
-          "start": 75.88,
-          "end": 76.06,
-          "word": " shot?",
-          "probability": 0.20904040336608887
+          "start": 76.02,
+          "end": 76.3,
+          "word": " attack.",
+          "probability": 0.2793325185775757
         }
       ]
     },
     {
-      "start": 76.3,
-      "end": 78.8,
-      "text": "Yeah. It was fast though.",
+      "start": 77.56,
+      "end": 78.74,
+      "text": "It was fast though.",
       "words": [
         {
-          "start": 76.3,
-          "end": 76.4,
-          "word": " Yeah.",
-          "probability": 0.30965346097946167
-        },
-        {
-          "start": 77.84,
-          "end": 77.98,
+          "start": 77.56,
+          "end": 77.94,
           "word": " It",
-          "probability": 0.8490360975265503
+          "probability": 0.9320324659347534
         },
         {
-          "start": 77.98,
-          "end": 78.1,
+          "start": 77.94,
+          "end": 78.02,
           "word": " was",
-          "probability": 0.9930741786956787
+          "probability": 0.991972804069519
         },
         {
-          "start": 78.1,
-          "end": 78.6,
+          "start": 78.02,
+          "end": 78.5,
           "word": " fast",
-          "probability": 0.5239441990852356
+          "probability": 0.676683783531189
         },
         {
-          "start": 78.6,
-          "end": 78.8,
+          "start": 78.5,
+          "end": 78.74,
           "word": " though.",
-          "probability": 0.41248342394828796
+          "probability": 0.7698870897293091
         }
       ]
     }

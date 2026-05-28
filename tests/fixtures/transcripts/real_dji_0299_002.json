@@ -1,0 +1,766 @@
+{
+  "source": "DJI_0299_002.MP4",
+  "language": "en",
+  "duration": 108.78,
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 39.86,
+      "text": "Hammer down. Holster. Range is clear. Time. 3-9-8-7 3-9-8-7. Score ready? Score's ready. One alpha. Charlie. Delta. Alpha. Charlie. Delta. Two alpha. Mike. Two alpha. One Mike. Two alpha. One Charlie. Two alpha. One Charlie. Three alpha. Max.",
+      "words": [
+        {
+          "start": 0.0,
+          "end": 0.14,
+          "word": " Hammer",
+          "probability": 0.7086859345436096
+        },
+        {
+          "start": 0.14,
+          "end": 0.36,
+          "word": " down.",
+          "probability": 0.9489492774009705
+        },
+        {
+          "start": 0.98,
+          "end": 1.62,
+          "word": " Holster.",
+          "probability": 0.8396432995796204
+        },
+        {
+          "start": 2.82,
+          "end": 3.46,
+          "word": " Range",
+          "probability": 0.09364833682775497
+        },
+        {
+          "start": 3.46,
+          "end": 3.62,
+          "word": " is",
+          "probability": 0.9486696720123291
+        },
+        {
+          "start": 3.62,
+          "end": 3.86,
+          "word": " clear.",
+          "probability": 0.9817469120025635
+        },
+        {
+          "start": 4.0,
+          "end": 4.28,
+          "word": " Time.",
+          "probability": 0.960364580154419
+        },
+        {
+          "start": 4.42,
+          "end": 4.94,
+          "word": " 3",
+          "probability": 0.6773948073387146
+        },
+        {
+          "start": 4.94,
+          "end": 5.34,
+          "word": "-9",
+          "probability": 0.6317208707332611
+        },
+        {
+          "start": 5.34,
+          "end": 5.74,
+          "word": "-8",
+          "probability": 0.9987080097198486
+        },
+        {
+          "start": 5.74,
+          "end": 6.22,
+          "word": "-7",
+          "probability": 0.9982316792011261
+        },
+        {
+          "start": 6.22,
+          "end": 6.62,
+          "word": " 3",
+          "probability": 0.09215227514505386
+        },
+        {
+          "start": 6.62,
+          "end": 6.94,
+          "word": "-9",
+          "probability": 0.9919841289520264
+        },
+        {
+          "start": 6.94,
+          "end": 7.2,
+          "word": "-8",
+          "probability": 0.8584719598293304
+        },
+        {
+          "start": 7.2,
+          "end": 7.6,
+          "word": "-7.",
+          "probability": 0.9936021268367767
+        },
+        {
+          "start": 8.54,
+          "end": 9.18,
+          "word": " Score",
+          "probability": 0.9220380187034607
+        },
+        {
+          "start": 9.18,
+          "end": 9.4,
+          "word": " ready?",
+          "probability": 0.749912440776825
+        },
+        {
+          "start": 9.88,
+          "end": 10.3,
+          "word": " Score's",
+          "probability": 0.7958482205867767
+        },
+        {
+          "start": 10.3,
+          "end": 10.4,
+          "word": " ready.",
+          "probability": 0.9953464865684509
+        },
+        {
+          "start": 13.79,
+          "end": 14.43,
+          "word": " One",
+          "probability": 0.34046444296836853
+        },
+        {
+          "start": 14.43,
+          "end": 14.75,
+          "word": " alpha.",
+          "probability": 0.518412172794342
+        },
+        {
+          "start": 15.17,
+          "end": 15.81,
+          "word": " Charlie.",
+          "probability": 0.9929499626159668
+        },
+        {
+          "start": 15.97,
+          "end": 16.41,
+          "word": " Delta.",
+          "probability": 0.9640079140663147
+        },
+        {
+          "start": 16.97,
+          "end": 17.61,
+          "word": " Alpha.",
+          "probability": 0.9613789319992065
+        },
+        {
+          "start": 17.65,
+          "end": 17.93,
+          "word": " Charlie.",
+          "probability": 0.9979520440101624
+        },
+        {
+          "start": 18.01,
+          "end": 18.29,
+          "word": " Delta.",
+          "probability": 0.9951077699661255
+        },
+        {
+          "start": 20.76,
+          "end": 21.4,
+          "word": " Two",
+          "probability": 0.9239786267280579
+        },
+        {
+          "start": 21.4,
+          "end": 21.76,
+          "word": " alpha.",
+          "probability": 0.9964242577552795
+        },
+        {
+          "start": 24.2,
+          "end": 24.84,
+          "word": " Mike.",
+          "probability": 0.9839408993721008
+        },
+        {
+          "start": 26.06,
+          "end": 26.7,
+          "word": " Two",
+          "probability": 0.9887856245040894
+        },
+        {
+          "start": 26.7,
+          "end": 26.94,
+          "word": " alpha.",
+          "probability": 0.997717022895813
+        },
+        {
+          "start": 26.98,
+          "end": 27.18,
+          "word": " One",
+          "probability": 0.9973968267440796
+        },
+        {
+          "start": 27.18,
+          "end": 27.5,
+          "word": " Mike.",
+          "probability": 0.987316370010376
+        },
+        {
+          "start": 27.68,
+          "end": 28.08,
+          "word": " Two",
+          "probability": 0.9610264897346497
+        },
+        {
+          "start": 32.4,
+          "end": 32.66,
+          "word": " alpha.",
+          "probability": 0.997102677822113
+        },
+        {
+          "start": 32.9,
+          "end": 33.34,
+          "word": " One",
+          "probability": 0.8300135135650635
+        },
+        {
+          "start": 33.34,
+          "end": 33.96,
+          "word": " Charlie.",
+          "probability": 0.9981174468994141
+        },
+        {
+          "start": 34.54,
+          "end": 35.18,
+          "word": " Two",
+          "probability": 0.992377519607544
+        },
+        {
+          "start": 35.18,
+          "end": 35.46,
+          "word": " alpha.",
+          "probability": 0.9993557333946228
+        },
+        {
+          "start": 35.52,
+          "end": 35.7,
+          "word": " One",
+          "probability": 0.9975197911262512
+        },
+        {
+          "start": 35.7,
+          "end": 36.08,
+          "word": " Charlie.",
+          "probability": 0.9996540546417236
+        },
+        {
+          "start": 38.42,
+          "end": 39.06,
+          "word": " Three",
+          "probability": 0.9975274205207825
+        },
+        {
+          "start": 39.06,
+          "end": 39.44,
+          "word": " alpha.",
+          "probability": 0.9951194524765015
+        },
+        {
+          "start": 39.6,
+          "end": 39.86,
+          "word": " Max.",
+          "probability": 0.4395979940891266
+        }
+      ]
+    },
+    {
+      "start": 39.86,
+      "end": 77.89,
+      "text": "Max. Three alpha. Two alpha. One Charlie. Two alpha. One Charlie. One Charlie. Two delta. Charlie. Delta. Delta. Alpha. Charlie. Delta. Alpha. Charlie. Delta. Alpha. Charlie. Charlie. Alpha. Charlie. Charlie. Alpha. Charlie. Charlie. Alpha. Charlie. Charlie. Three alpha. One. Two. Three alpha.",
+      "words": [
+        {
+          "start": 39.86,
+          "end": 39.96,
+          "word": " Max.",
+          "probability": 0.0003602210490498692
+        },
+        {
+          "start": 41.2,
+          "end": 41.76,
+          "word": " Three",
+          "probability": 0.3604603409767151
+        },
+        {
+          "start": 41.76,
+          "end": 42.12,
+          "word": " alpha.",
+          "probability": 0.4661131203174591
+        },
+        {
+          "start": 43.92,
+          "end": 44.48,
+          "word": " Two",
+          "probability": 0.9343184232711792
+        },
+        {
+          "start": 44.48,
+          "end": 44.84,
+          "word": " alpha.",
+          "probability": 0.9660913348197937
+        },
+        {
+          "start": 44.86,
+          "end": 45.04,
+          "word": " One",
+          "probability": 0.46239957213401794
+        },
+        {
+          "start": 45.04,
+          "end": 45.26,
+          "word": " Charlie.",
+          "probability": 0.19978541135787964
+        },
+        {
+          "start": 46.1,
+          "end": 46.42,
+          "word": " Two",
+          "probability": 0.3805392384529114
+        },
+        {
+          "start": 46.42,
+          "end": 46.52,
+          "word": " alpha.",
+          "probability": 0.8998091220855713
+        },
+        {
+          "start": 46.7,
+          "end": 46.88,
+          "word": " One",
+          "probability": 0.9202597141265869
+        },
+        {
+          "start": 46.88,
+          "end": 47.32,
+          "word": " Charlie.",
+          "probability": 0.9160040020942688
+        },
+        {
+          "start": 50.48,
+          "end": 51.04,
+          "word": " One",
+          "probability": 0.8939450979232788
+        },
+        {
+          "start": 51.04,
+          "end": 51.48,
+          "word": " Charlie.",
+          "probability": 0.9512491822242737
+        },
+        {
+          "start": 51.54,
+          "end": 51.7,
+          "word": " Two",
+          "probability": 0.9839411377906799
+        },
+        {
+          "start": 51.7,
+          "end": 51.98,
+          "word": " delta.",
+          "probability": 0.6136813759803772
+        },
+        {
+          "start": 52.4,
+          "end": 52.96,
+          "word": " Charlie.",
+          "probability": 0.16091108322143555
+        },
+        {
+          "start": 52.96,
+          "end": 53.24,
+          "word": " Delta.",
+          "probability": 0.8545120358467102
+        },
+        {
+          "start": 53.4,
+          "end": 53.74,
+          "word": " Delta.",
+          "probability": 0.8639881610870361
+        },
+        {
+          "start": 55.22,
+          "end": 55.78,
+          "word": " Alpha.",
+          "probability": 0.9503424167633057
+        },
+        {
+          "start": 55.9,
+          "end": 56.2,
+          "word": " Charlie.",
+          "probability": 0.9816329479217529
+        },
+        {
+          "start": 56.34,
+          "end": 56.58,
+          "word": " Delta.",
+          "probability": 0.8963912129402161
+        },
+        {
+          "start": 56.92,
+          "end": 57.48,
+          "word": " Alpha.",
+          "probability": 0.9872588515281677
+        },
+        {
+          "start": 57.54,
+          "end": 57.82,
+          "word": " Charlie.",
+          "probability": 0.9942236542701721
+        },
+        {
+          "start": 57.96,
+          "end": 58.02,
+          "word": " Delta.",
+          "probability": 0.4217735528945923
+        },
+        {
+          "start": 58.92,
+          "end": 59.48,
+          "word": " Alpha.",
+          "probability": 0.9779186844825745
+        },
+        {
+          "start": 63.53,
+          "end": 63.87,
+          "word": " Charlie.",
+          "probability": 0.9896987080574036
+        },
+        {
+          "start": 63.97,
+          "end": 64.41,
+          "word": " Charlie.",
+          "probability": 0.41727837920188904
+        },
+        {
+          "start": 66.41,
+          "end": 66.97,
+          "word": " Alpha.",
+          "probability": 0.9500065445899963
+        },
+        {
+          "start": 67.15,
+          "end": 67.43,
+          "word": " Charlie.",
+          "probability": 0.9904022216796875
+        },
+        {
+          "start": 67.67,
+          "end": 68.15,
+          "word": " Charlie.",
+          "probability": 0.958024799823761
+        },
+        {
+          "start": 68.47,
+          "end": 69.03,
+          "word": " Alpha.",
+          "probability": 0.8614804148674011
+        },
+        {
+          "start": 69.07,
+          "end": 69.41,
+          "word": " Charlie.",
+          "probability": 0.989629328250885
+        },
+        {
+          "start": 69.55,
+          "end": 69.63,
+          "word": " Charlie.",
+          "probability": 0.8584959506988525
+        },
+        {
+          "start": 69.63,
+          "end": 69.63,
+          "word": " Alpha.",
+          "probability": 0.17961835861206055
+        },
+        {
+          "start": 69.63,
+          "end": 69.63,
+          "word": " Charlie.",
+          "probability": 0.9335649013519287
+        },
+        {
+          "start": 69.63,
+          "end": 69.77,
+          "word": " Charlie.",
+          "probability": 0.46424180269241333
+        },
+        {
+          "start": 71.27,
+          "end": 71.83,
+          "word": " Three",
+          "probability": 0.8036347031593323
+        },
+        {
+          "start": 75.13,
+          "end": 75.55,
+          "word": " alpha.",
+          "probability": 0.8609030842781067
+        },
+        {
+          "start": 76.11,
+          "end": 76.67,
+          "word": " One.",
+          "probability": 0.9397250413894653
+        },
+        {
+          "start": 76.67,
+          "end": 76.95,
+          "word": " Two.",
+          "probability": 0.9963812828063965
+        },
+        {
+          "start": 77.09,
+          "end": 77.51,
+          "word": " Three",
+          "probability": 0.9958693385124207
+        },
+        {
+          "start": 77.51,
+          "end": 77.89,
+          "word": " alpha.",
+          "probability": 0.8696194887161255
+        }
+      ]
+    },
+    {
+      "start": 77.89,
+      "end": 83.14,
+      "text": "Sofa, review approved.",
+      "words": [
+        {
+          "start": 77.89,
+          "end": 78.03,
+          "word": " Sofa,",
+          "probability": 0.4655717813875526
+        },
+        {
+          "start": 78.19,
+          "end": 79.35,
+          "word": " review",
+          "probability": 0.888359546661377
+        },
+        {
+          "start": 82.1,
+          "end": 83.14,
+          "word": " approved.",
+          "probability": 0.4683060944080353
+        }
+      ]
+    },
+    {
+      "start": 84.06,
+      "end": 84.8,
+      "text": "Thank you.",
+      "words": [
+        {
+          "start": 84.06,
+          "end": 84.58,
+          "word": " Thank",
+          "probability": 0.24107089638710022
+        },
+        {
+          "start": 84.58,
+          "end": 84.8,
+          "word": " you.",
+          "probability": 0.9803034067153931
+        }
+      ]
+    },
+    {
+      "start": 84.8,
+      "end": 85.42,
+      "text": "You got a magazine.",
+      "words": [
+        {
+          "start": 84.8,
+          "end": 84.92,
+          "word": " You",
+          "probability": 0.019254596903920174
+        },
+        {
+          "start": 84.92,
+          "end": 85.04,
+          "word": " got",
+          "probability": 0.6308726668357849
+        },
+        {
+          "start": 85.04,
+          "end": 85.1,
+          "word": " a",
+          "probability": 0.8584502339363098
+        },
+        {
+          "start": 85.1,
+          "end": 85.42,
+          "word": " magazine.",
+          "probability": 0.9723780155181885
+        }
+      ]
+    },
+    {
+      "start": 87.28,
+      "end": 91.52,
+      "text": "Top of the line up, top of the line up.",
+      "words": [
+        {
+          "start": 87.28,
+          "end": 87.8,
+          "word": " Top",
+          "probability": 0.8365589380264282
+        },
+        {
+          "start": 87.8,
+          "end": 88.0,
+          "word": " of",
+          "probability": 0.9877169728279114
+        },
+        {
+          "start": 88.0,
+          "end": 88.18,
+          "word": " the",
+          "probability": 0.9957132339477539
+        },
+        {
+          "start": 88.18,
+          "end": 88.74,
+          "word": " line",
+          "probability": 0.6763485670089722
+        },
+        {
+          "start": 88.74,
+          "end": 89.34,
+          "word": " up,",
+          "probability": 0.6915578842163086
+        },
+        {
+          "start": 89.44,
+          "end": 89.9,
+          "word": " top",
+          "probability": 0.968649685382843
+        },
+        {
+          "start": 89.9,
+          "end": 90.12,
+          "word": " of",
+          "probability": 0.9979447722434998
+        },
+        {
+          "start": 90.12,
+          "end": 90.44,
+          "word": " the",
+          "probability": 0.9972373247146606
+        },
+        {
+          "start": 90.44,
+          "end": 90.82,
+          "word": " line",
+          "probability": 0.9945361614227295
+        },
+        {
+          "start": 90.82,
+          "end": 91.52,
+          "word": " up.",
+          "probability": 0.9869052767753601
+        }
+      ]
+    },
+    {
+      "start": 91.7,
+      "end": 92.36,
+      "text": "Thank you.",
+      "words": [
+        {
+          "start": 91.7,
+          "end": 92.1,
+          "word": " Thank",
+          "probability": 0.8337063193321228
+        },
+        {
+          "start": 92.1,
+          "end": 92.36,
+          "word": " you.",
+          "probability": 0.9979459643363953
+        }
+      ]
+    },
+    {
+      "start": 92.6,
+      "end": 96.98,
+      "text": "Thank you, Anthony.",
+      "words": [
+        {
+          "start": 92.6,
+          "end": 93.12,
+          "word": " Thank",
+          "probability": 0.8225346207618713
+        },
+        {
+          "start": 96.48,
+          "end": 96.68,
+          "word": " you,",
+          "probability": 0.9953470826148987
+        },
+        {
+          "start": 96.68,
+          "end": 96.98,
+          "word": " Anthony.",
+          "probability": 0.9544751048088074
+        }
+      ]
+    },
+    {
+      "start": 97.14,
+      "end": 98.78,
+      "text": "This is really a carpool, baby.",
+      "words": [
+        {
+          "start": 97.14,
+          "end": 97.4,
+          "word": " This",
+          "probability": 0.04929932951927185
+        },
+        {
+          "start": 97.4,
+          "end": 97.52,
+          "word": " is",
+          "probability": 0.8657311201095581
+        },
+        {
+          "start": 97.52,
+          "end": 97.78,
+          "word": " really",
+          "probability": 0.12250517308712006
+        },
+        {
+          "start": 97.78,
+          "end": 97.94,
+          "word": " a",
+          "probability": 0.5137791633605957
+        },
+        {
+          "start": 97.94,
+          "end": 98.42,
+          "word": " carpool,",
+          "probability": 0.17680431436747313
+        },
+        {
+          "start": 98.48,
+          "end": 98.78,
+          "word": " baby.",
+          "probability": 0.9595804214477539
+        }
+      ]
+    }
+  ]
+}
