@@ -221,7 +221,6 @@ In the debug directory (`<output_dir>/debug/` by default, or the path you pass w
 | `--phrase-threshold` | `70.0` | Fuzzy matching threshold for phrase detection (0-100). Lower = more lenient, higher = stricter. |
 | `--beep-search-before` | `0.25` | Seconds before "stand by" end to start searching for the timer beep. |
 | `--beep-search-after` | `10.0` | Seconds after "stand by" end to stop searching for the timer beep. Clamped to first end command if found earlier. |
-| `--workers` | `1` | Number of parallel workers for anchor detection. >1 spawns separate processes. GPU mode forces 1. |
 | `-v` / `--verbose` | off | Enable debug-level logging for detailed output. |
 
 ---
@@ -246,7 +245,7 @@ ffmpeg is not on your system PATH. On Windows, install it with `winget install G
 
 ### First run is very slow
 
-The first time you run the tool, it downloads the Whisper model (the `small` model is about 500 MB). This is a one-time download. Subsequent runs use the cached model.
+The first time you run the tool, it downloads the Whisper model (the default `large-v3` model is about 3 GB). This is a one-time download. Subsequent runs use the cached model. Use `--model small` (~500 MB) for faster downloads and lower memory usage.
 
 ### Speech recognition misses commands
 
