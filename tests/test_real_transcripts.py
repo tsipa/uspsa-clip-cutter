@@ -198,22 +198,53 @@ class TestDJI0295:
                 )
 
 
-class TestDJI0297_001:
-    """Contains RO commands. Should find start. May or may not find end
-    depending on Whisper model version (large-v3 hears more)."""
+class TestDJI0297_001_Small:
+    """small model: only heard 'Are you ready? Stand by.' — no end command."""
 
     def test_finds_standby(self) -> None:
-        segments = _load("real_dji_0297_001")
+        segments = _load("real_dji_0297_001_small")
+        starts, ends = detect_phrases(segments)
+        standby = [m for m in starts if "stand by" in m.matched_phrase.lower()]
+        assert len(standby) >= 1
+
+    def test_no_hammer_down(self) -> None:
+        segments = _load("real_dji_0297_001_small")
+        starts, ends = detect_phrases(segments)
+        hammer = [m for m in ends if "hammer" in m.matched_phrase.lower()]
+        assert len(hammer) == 0
+
+
+class TestDJI0297_001_Large:
+    """large-v3 model: heard 'hammer down and holster' + 'Are you ready? Stand by.'"""
+
+    def test_finds_standby(self) -> None:
+        segments = _load("real_dji_0297_001_large")
+        starts, ends = detect_phrases(segments)
+        standby = [m for m in starts if "stand by" in m.matched_phrase.lower()]
+        assert len(standby) >= 1
+
+    def test_finds_hammer_down(self) -> None:
+        segments = _load("real_dji_0297_001_large")
+        starts, ends = detect_phrases(segments)
+        hammer = [m for m in ends if "hammer" in m.matched_phrase.lower()]
+        assert len(hammer) >= 1
+
+
+class TestDJI0298_Small:
+    """small model: merged everything into one huge segment.
+    'Stand by' is buried inside but should still match."""
+
+    def test_finds_standby(self) -> None:
+        segments = _load("real_dji_0298_small")
         starts, ends = detect_phrases(segments)
         standby = [m for m in starts if "stand by" in m.matched_phrase.lower()]
         assert len(standby) >= 1
 
 
-class TestDJI0298:
-    """Contains RO commands in possibly merged segments.
-    Should find at least one start anchor."""
+class TestDJI0298_Large:
+    """large-v3 model: better segmentation, 'Stand by' and 'Ready' visible."""
 
     def test_finds_start(self) -> None:
-        segments = _load("real_dji_0298")
+        segments = _load("real_dji_0298_large")
         starts, ends = detect_phrases(segments)
-        assert len(starts) >= 1, f"No start found. Segments: {[s.text for s in segments]}"
+        assert len(starts) >= 1

@@ -1,0 +1,87 @@
+{
+  "source": "DJI_0297_001.MP4",
+  "language": "en",
+  "duration": 79.82,
+  "segments": [
+    {
+      "start": 13.06,
+      "end": 46.52,
+      "text": "If finished, hammer down and holster.",
+      "words": [
+        {
+          "start": 13.06,
+          "end": 14.46,
+          "word": " If",
+          "probability": 0.00106656679417938
+        },
+        {
+          "start": 20.8,
+          "end": 22.2,
+          "word": " finished,",
+          "probability": 7.828251000319142e-06
+        },
+        {
+          "start": 34.58,
+          "end": 38.48,
+          "word": " hammer",
+          "probability": 0.0001013810615404509
+        },
+        {
+          "start": 38.48,
+          "end": 39.44,
+          "word": " down",
+          "probability": 0.12126405537128448
+        },
+        {
+          "start": 39.44,
+          "end": 39.46,
+          "word": " and",
+          "probability": 0.06595558673143387
+        },
+        {
+          "start": 39.46,
+          "end": 46.52,
+          "word": " holster.",
+          "probability": 0.3794082859394621
+        }
+      ]
+    },
+    {
+      "start": 66.46,
+      "end": 69.82,
+      "text": "Are you ready? Stand by.",
+      "words": [
+        {
+          "start": 66.46,
+          "end": 67.22,
+          "word": " Are",
+          "probability": 0.4012816250324249
+        },
+        {
+          "start": 67.22,
+          "end": 67.8,
+          "word": " you",
+          "probability": 0.9959197044372559
+        },
+        {
+          "start": 67.8,
+          "end": 68.1,
+          "word": " ready?",
+          "probability": 0.9808531403541565
+        },
+        {
+          "start": 68.68,
+          "end": 69.44,
+          "word": " Stand",
+          "probability": 0.799303412437439
+        },
+        {
+          "start": 69.44,
+          "end": 69.82,
+          "word": " by.",
+          "probability": 0.7797712087631226
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "source": "DJI_0297_001.MP4",
+  "language": "en",
+  "duration": 80.0,
+  "segments": [
+    {
+      "start": 66.8,
+      "end": 70.0,
+      "text": "Are you ready? Stand by.",
+      "words": [
+        {
+          "start": 66.8,
+          "end": 67.68,
+          "word": " Are",
+          "probability": 0.173506498336792
+        },
+        {
+          "start": 67.68,
+          "end": 67.88,
+          "word": " you",
+          "probability": 0.9914363026618958
+        },
+        {
+          "start": 67.88,
+          "end": 68.22,
+          "word": " ready?",
+          "probability": 0.9839771389961243
+        },
+        {
+          "start": 69.32,
+          "end": 69.56,
+          "word": " Stand",
+          "probability": 0.8729831576347351
+        },
+        {
+          "start": 69.56,
+          "end": 70.0,
+          "word": " by.",
+          "probability": 0.9026384353637695
+        }
+      ]
+    }
+  ]
+}
