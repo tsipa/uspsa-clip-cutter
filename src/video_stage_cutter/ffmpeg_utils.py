@@ -119,7 +119,8 @@ def concat_and_cut(
         mode="w", suffix=".txt", delete=False, prefix="concat_",
     ) as f:
         for vp in video_paths:
-            f.write(f"file '{vp}'\n")
+            escaped = str(vp).replace("'", "'\\''")
+            f.write(f"file '{escaped}'\n")
         concat_list = Path(f.name)
 
     try:

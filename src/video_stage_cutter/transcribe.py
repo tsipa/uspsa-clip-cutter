@@ -26,56 +26,6 @@ class TranscriptSegment:
     words: list[WordInfo]
 
 
-def transcribe_audio(
-    audio_path: Path,
-    model_name: str = "small",
-    device: str = "cpu",
-    compute_type: str = "int8",
-) -> list[TranscriptSegment]:
-    """Transcribe *audio_path* and return a list of segments with word-level timing."""
-    from faster_whisper import WhisperModel
-
-    log.info("Loading Whisper model '%s' (device=%s, compute_type=%s) ...", model_name, device, compute_type)
-    model = WhisperModel(model_name, device=device, compute_type=compute_type)
-
-    log.info("Transcribing %s ...", audio_path.name)
-    segments_iter, _info = model.transcribe(
-        str(audio_path),
-        beam_size=5,
-        word_timestamps=True,
-        language="en",
-        initial_prompt=(
-            "USPSA practical shooting match. Range officer commands: "
-            "Load and make ready. Make ready. Shooter ready. "
-            "Are you ready? Stand by. Standby. "
-            "If you are finished, unload and show clear. "
-            "If clear, hammer down and holster. Hammer down. Holster. "
-            "Range is clear. Stage is clear."
-        ),
-        vad_filter=True,
-    )
-
-    segments: list[TranscriptSegment] = []
-    for seg in segments_iter:
-        words = [
-            WordInfo(
-                start=w.start,
-                end=w.end,
-                word=w.word,
-                probability=w.probability,
-            )
-            for w in (seg.words or [])
-        ]
-        segments.append(TranscriptSegment(
-            start=seg.start,
-            end=seg.end,
-            text=seg.text.strip(),
-            words=words,
-        ))
-
-    log.info("Transcription complete: %d segments", len(segments))
-    return segments
-
 
 def save_transcript(segments: list[TranscriptSegment], path: Path) -> None:
     """Write transcript segments as JSON."""

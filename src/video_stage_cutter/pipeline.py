@@ -4,9 +4,6 @@ from __future__ import annotations
 
 import json
 import logging
-import multiprocessing
-import os
-from concurrent.futures import ProcessPoolExecutor
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
@@ -150,9 +147,10 @@ def discover_videos(input_dir: Path) -> list[Path]:
         p for p in input_dir.iterdir()
         if p.is_file() and p.suffix.lower() in VIDEO_EXTENSIONS
     ]
-    has_metadata = all(get_creation_time(v) is not None for v in videos)
+    ct_cache = {v: get_creation_time(v) for v in videos}
+    has_metadata = all(ct is not None for ct in ct_cache.values())
     if has_metadata:
-        videos.sort(key=lambda p: get_creation_time(p))
+        videos.sort(key=lambda p: ct_cache[p])
         log.info("Sorted %d videos by creation_time metadata", len(videos))
     else:
         videos.sort(key=filename_sort_key)
@@ -364,7 +362,7 @@ def _collect_audio_anchors_for_file(
     else:
         log.info("  No gunshots detected")
 
-    return anchors, whisper_model
+    return anchors
 
 
 # ---------------------------------------------------------------------------
@@ -505,7 +503,7 @@ def _assemble_stages(anchors: list[Anchor], min_clip_length: float = 5.0) -> lis
                 stage.standby = start_a
             else:
                 stage.ready = start_a
-            stage.clip_start = start_a.end_offset + (start_a.abs_time - start_a.file_offset)
+            stage.clip_start = start_a.abs_time + (start_a.end_offset - start_a.file_offset)
             stage.clip_end = end_a.abs_time + (end_a.end_offset - end_a.file_offset)
             stage.start_reason = f"{start_a.kind}_no_beep"
             stage.end_reason = f"matched:{end_a.text}"
@@ -548,8 +546,7 @@ def _assemble_stages(anchors: list[Anchor], min_clip_length: float = 5.0) -> lis
             stage.standby = start_a
         else:
             stage.ready = start_a
-        epoch_offset = start_a.abs_time - start_a.file_offset
-        stage.clip_start = epoch_offset + start_a.end_offset
+        stage.clip_start = start_a.abs_time + (start_a.end_offset - start_a.file_offset)
         stage.clip_end = stage.clip_start + FALLBACK_DURATION
         stage.start_reason = f"{start_a.kind}_no_beep"
         stage.end_reason = "fallback_3min_no_end"
@@ -1140,82 +1137,8 @@ def _transcribe(
     return segments, cached_model
 
 
-# ---------------------------------------------------------------------------
-# Parallel worker (runs in child process)
-# ---------------------------------------------------------------------------
-
-_worker_whisper_model = None
 
 
-def _worker_init(model_name: str, device: str, compute_type: str) -> None:
-    """Called once per worker process to load the Whisper model."""
-    global _worker_whisper_model
-    from faster_whisper import WhisperModel
-    _worker_whisper_model = WhisperModel(model_name, device=device, compute_type=compute_type)
-
-
-def _worker_process_file(args: dict) -> dict:
-    """Process a single file in a worker process. Returns serializable results."""
-    global _worker_whisper_model
-
-    video_path = Path(args["video_path"])
-    wav_path = Path(args["wav_path"])
-    debug_dir = Path(args["debug_dir"])
-    file_idx = args["file_idx"]
-    epoch = args["epoch"]
-    duration = args["duration"]
-    creation_str = args["creation_str"]
-    creation_iso = args["creation_iso"]
-    phrase_threshold = args["phrase_threshold"]
-    beep_search_before = args["beep_search_before"]
-    beep_search_after = args["beep_search_after"]
-
-    fi = FileInfo(
-        path=video_path,
-        wav_path=wav_path,
-        duration=duration,
-        creation_epoch=epoch,
-        creation_str=creation_str,
-        creation_iso=creation_iso,
-    )
-
-    config = ProcessingConfig(
-        phrase_threshold=phrase_threshold,
-        beep_search_before=beep_search_before,
-        beep_search_after=beep_search_after,
-    )
-
-    try:
-        anchors, _ = _collect_anchors_for_file(
-            fi, file_idx, config, debug_dir, _worker_whisper_model,
-        )
-        return {
-            "file_idx": file_idx,
-            "anchors": [asdict(a) for a in anchors],
-            "beep_searches": [asdict(bs) for bs in fi.beep_searches],
-            "error": None,
-        }
-    except Exception as exc:
-        return {
-            "file_idx": file_idx,
-            "anchors": [],
-            "beep_searches": [],
-            "error": str(exc),
-        }
-
-
-def _resolve_workers(config: ProcessingConfig) -> int:
-    """Return the number of worker processes to use."""
-    if config.workers > 0:
-        n = config.workers
-    else:
-        n = max(1, int((os.cpu_count() or 1) * 0.75))
-
-    if config.device != "cpu" and n > 1:
-        log.warning("GPU mode (device=%s): forcing workers=1 to avoid VRAM contention", config.device)
-        n = 1
-
-    return n
 
 
 # ---------------------------------------------------------------------------
