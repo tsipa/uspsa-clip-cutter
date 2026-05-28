@@ -85,7 +85,8 @@ class Anchor:
 
 @dataclass
 class BeepSearchRecord:
-    standby_offset: float
+    anchor_offset: float
+    anchor_kind: str
     search_start: float
     search_end: float
     candidates: list[dict] = field(default_factory=list)
@@ -243,7 +244,8 @@ def _collect_anchors_for_file(
         beeps = detect_beeps(fi.wav_path, search_start, search_end)
 
         record = BeepSearchRecord(
-            standby_offset=anchor.file_offset,
+            anchor_offset=anchor.file_offset,
+            anchor_kind=anchor.kind,
             search_start=search_start,
             search_end=search_end,
         )
