@@ -231,12 +231,16 @@ def _build_anchors(
             kind=kind, abs_time=epoch + m.start, file_idx=file_idx,
             file_offset=m.start, text=m.text, score=m.score,
             end_offset=m.end,
+            steps_found=m.steps_found, steps_total=m.steps_total,
+            matched_step_orders=m.matched_step_orders,
         ))
     for m in ends:
         anchors.append(Anchor(
             kind="end_command", abs_time=epoch + m.start, file_idx=file_idx,
             file_offset=m.start, text=m.text, score=m.score,
             end_offset=m.end,
+            steps_found=m.steps_found, steps_total=m.steps_total,
+            matched_step_orders=m.matched_step_orders,
         ))
     return anchors
 

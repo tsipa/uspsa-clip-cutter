@@ -37,6 +37,8 @@ def run(
     phrase_threshold: float = typer.Option(70.0, help="Fuzzy matching threshold for phrase detection (0-100). Lower = more lenient."),
     beep_search_before: float = typer.Option(0.25, help="Seconds before standby end to start searching for the beep."),
     beep_search_after: float = typer.Option(10.0, help="Seconds after standby end to stop searching for the beep."),
+    reuse_transcripts: bool = typer.Option(False, help="Reuse existing transcript JSON files from the debug directory instead of re-transcribing."),
+    workers: int = typer.Option(1, help="Number of parallel transcription workers. Each loads its own Whisper model (~3GB RAM)."),
     verbose: bool = typer.Option(False, "-v", "--verbose", help="Enable debug logging."),
 ) -> None:
     """Scan INPUT_DIR for videos, detect stage boundaries, and cut clips into OUTPUT_DIR."""
@@ -72,6 +74,8 @@ def run(
         phrase_threshold=phrase_threshold,
         beep_search_before=beep_search_before,
         beep_search_after=beep_search_after,
+        reuse_transcripts=reuse_transcripts,
+        workers=workers,
     )
 
     rows = run_batch(input_dir, output_dir, config)

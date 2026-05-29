@@ -32,7 +32,7 @@ log = logging.getLogger(__name__)
 
 VIDEO_EXTENSIONS = {".mp4", ".mov", ".m4v"}
 MAX_STAGE_SECONDS = 300.0
-FALLBACK_DURATION = 180.0
+FALLBACK_DURATION = 120.0
 
 
 # ---------------------------------------------------------------------------
@@ -56,6 +56,8 @@ class ProcessingConfig:
     phrase_threshold: float = 70.0
     beep_search_before: float = 0.25
     beep_search_after: float = 10.0
+    reuse_transcripts: bool = False
+    workers: int = 1
 
 
 # ---------------------------------------------------------------------------
@@ -71,6 +73,9 @@ class Anchor:
     text: str           # matched text or description
     score: float        # confidence / fuzzy score
     end_offset: float = 0.0  # end of the phrase in file-local time
+    steps_found: int = 0
+    steps_total: int = 0
+    matched_step_orders: tuple[int, ...] = ()
 
     def __repr__(self) -> str:
         return f"<{self.kind} t={self.abs_time:.2f} off={self.file_offset:.2f} '{self.text}' score={self.score:.0f}>"
@@ -167,20 +172,28 @@ def _transcribe_file(
     whisper_model: object | None,
 ) -> object | None:
     """Phase 1A: extract audio and transcribe one file. Stores segments in file_info."""
+    from video_stage_cutter.transcribe import load_transcript
+
     fi = file_info
 
     log.info("=" * 60)
     log.info("FILE [%d]: %s (%.1fs, created %s)", file_idx, fi.path.name, fi.duration, fi.creation_str)
 
-    log.info("  Extracting audio ...")
-    extract_audio(fi.path, fi.wav_path)
+    transcript_path = debug_dir / f"{fi.path.stem}_transcript.json"
 
-    fi.segments, whisper_model = _transcribe(fi.wav_path, config, whisper_model)
+    if config.reuse_transcripts and transcript_path.exists():
+        log.info("  Reusing transcript from %s", transcript_path)
+        fi.segments = load_transcript(transcript_path)
+    else:
+        log.info("  Extracting audio ...")
+        extract_audio(fi.path, fi.wav_path)
+        fi.segments, whisper_model = _transcribe(fi.wav_path, config, whisper_model)
+        save_transcript(fi.segments, transcript_path)
+
     log.info("  Transcript (%d segments):", len(fi.segments))
     for seg in fi.segments:
         log.info("    [%.2f-%.2f] %s", seg.start, seg.end, seg.text)
 
-    save_transcript(fi.segments, debug_dir / f"{fi.path.stem}_transcript.json")
     return whisper_model
 
 
@@ -226,9 +239,12 @@ def _detect_phrases_global(
             kind=kind, abs_time=m.start, file_idx=file_idx,
             file_offset=m.start - epoch, text=m.text, score=m.score,
             end_offset=m.end - epoch,
+            steps_found=m.steps_found, steps_total=m.steps_total,
+            matched_step_orders=m.matched_step_orders,
         ))
-        log.info("  ANCHOR %s: file[%d] @ %.2fs '%s' (score=%.0f)",
-                 kind.upper(), file_idx, m.start - epoch, m.text, m.score)
+        log.info("  ANCHOR %s: file[%d] @ %.2fs '%s' (score=%.0f, steps=%d/%d)",
+                 kind.upper(), file_idx, m.start - epoch, m.text, m.score,
+                 m.steps_found, m.steps_total)
 
     for m in end_matches:
         file_idx = _find_file_for_time(m.start, files)
@@ -237,9 +253,12 @@ def _detect_phrases_global(
             kind="end_command", abs_time=m.start, file_idx=file_idx,
             file_offset=m.start - epoch, text=m.text, score=m.score,
             end_offset=m.end - epoch,
+            steps_found=m.steps_found, steps_total=m.steps_total,
+            matched_step_orders=m.matched_step_orders,
         ))
-        log.info("  ANCHOR END_COMMAND: file[%d] @ %.2fs '%s' (score=%.0f)",
-                 file_idx, m.start - epoch, m.text, m.score)
+        log.info("  ANCHOR END_COMMAND: file[%d] @ %.2fs '%s' (score=%.0f, steps=%d/%d)",
+                 file_idx, m.start - epoch, m.text, m.score,
+                 m.steps_found, m.steps_total)
 
     return anchors
 
@@ -474,7 +493,7 @@ def _assemble_stages(anchors: list[Anchor], min_clip_length: float = 5.0) -> lis
         beep = anchors[bi]
         stage = _build_stage_from_beep(anchors, bi, end_idx=None)
         stage.clip_end = beep.abs_time + FALLBACK_DURATION
-        stage.end_reason = "fallback_3min_no_end"
+        stage.end_reason = "fallback_no_end"
         stage.complete = False
         fallback_no_end.append(stage)
         used_beeps.add(bi)
@@ -514,9 +533,8 @@ def _assemble_stages(anchors: list[Anchor], min_clip_length: float = 5.0) -> lis
                 stage.standby = start_a
             else:
                 stage.ready = start_a
-            stage.clip_start = start_a.abs_time + (start_a.end_offset - start_a.file_offset)
+            stage.clip_start, stage.start_reason = _pick_clip_start(stage)
             stage.clip_end = end_a.abs_time + (end_a.end_offset - end_a.file_offset)
-            stage.start_reason = f"{start_a.kind}_no_beep"
             stage.end_reason = f"matched:{end_a.text}"
             stage.complete = True
             for j in range(si + 1, end_idx):
@@ -557,10 +575,9 @@ def _assemble_stages(anchors: list[Anchor], min_clip_length: float = 5.0) -> lis
             stage.standby = start_a
         else:
             stage.ready = start_a
-        stage.clip_start = start_a.abs_time + (start_a.end_offset - start_a.file_offset)
+        stage.clip_start, stage.start_reason = _pick_clip_start(stage)
         stage.clip_end = stage.clip_start + FALLBACK_DURATION
-        stage.start_reason = f"{start_a.kind}_no_beep"
-        stage.end_reason = "fallback_3min_no_end"
+        stage.end_reason = "fallback_no_end"
         stage.complete = False
         for ga in anchors:
             if ga.kind == "gunshot" and stage.clip_start <= ga.abs_time <= stage.clip_end:
@@ -592,7 +609,7 @@ def _assemble_stages(anchors: list[Anchor], min_clip_length: float = 5.0) -> lis
         stage = Stage(end_command=best_a)
         stage.clip_end = best_a.abs_time + (best_a.end_offset - best_a.file_offset)
         stage.clip_start = stage.clip_end - FALLBACK_DURATION
-        stage.start_reason = "fallback_3min_no_start"
+        stage.start_reason = "fallback_no_start"
         stage.end_reason = f"matched:{best_a.text}"
         stage.complete = False
         for ga in anchors:
@@ -617,11 +634,11 @@ def _assemble_stages(anchors: list[Anchor], min_clip_length: float = 5.0) -> lis
     stages = confirmed + trimmed_fallbacks
     stages.sort(key=lambda s: s.clip_start)
 
-    # --- boost confidence based on corroborating evidence ---
-    _boost_all_stages(stages, anchors)
+    # --- score stages using holistic evidence model ---
+    _score_all_stages(stages, anchors)
 
     # --- filter low-confidence stages ---
-    MIN_CONFIDENCE = 0.4
+    MIN_CONFIDENCE = 0.15
     before = len(stages)
     stages = [s for s in stages if _effective_confidence(s) >= MIN_CONFIDENCE]
     if len(stages) < before:
@@ -634,62 +651,173 @@ def _assemble_stages(anchors: list[Anchor], min_clip_length: float = 5.0) -> lis
 
 
 def _effective_confidence(stage: Stage) -> float:
-    """Combined confidence from pattern score + contextual boosts."""
-    base = _stage_confidence(stage)
-    return min(1.0, base + stage.confidence_boost)
+    """Holistic stage confidence from start depth, end depth, and audio evidence."""
+    return _holistic_confidence(stage)
 
 
-def _boost_all_stages(stages: list[Stage], anchors: list[Anchor]) -> None:
-    """Boost stage confidence based on corroborating evidence."""
+def _start_depth(stage: Stage) -> float:
+    """How complete is the start protocol (0.0 - 1.0).
+
+    The anchor score already encodes sequence depth from phrase_detect
+    (more steps in order → higher score), so we use it directly.
+    Beep adds a fixed bonus as strong independent confirmation.
+    """
+    best_anchor = stage.standby or stage.ready
+    if not best_anchor and not stage.beep:
+        return 0.0
+
+    base = (best_anchor.score / 100.0) if best_anchor else 0.0
+
+    if stage.beep:
+        beep_quality = min(1.0, stage.beep.score / 100.0)
+        base += 0.25 * beep_quality
+
+    depth = min(1.0, base)
+    log.debug("    start_depth=%.2f anchor_score=%.1f beep=%s",
+              depth, best_anchor.score if best_anchor else 0, stage.beep is not None)
+    return depth
+
+
+def _end_depth(stage: Stage) -> float:
+    """How complete is the end protocol (0.0 - 1.0).
+
+    The anchor score already encodes sequence depth from phrase_detect.
+    """
+    if not stage.end_command:
+        return 0.0
+    return min(1.0, stage.end_command.score / 100.0)
+
+
+def _audio_evidence(stage: Stage, all_anchors: list[Anchor]) -> float:
+    """Evidence from beep and gunshot audio analysis (0.0 - 1.0)."""
+    evidence = 0.0
+
+    if stage.beep:
+        evidence += 0.55
+
+    n_gunshots = len(stage.gunshots)
+    if n_gunshots > 0:
+        evidence += min(0.25, n_gunshots * 0.05)
+
+    start_time = stage.clip_start
+    gs_near_start = sum(
+        1 for a in all_anchors
+        if a.kind == "gunshot" and 0 < a.abs_time - start_time <= 15.0
+    )
+    if gs_near_start:
+        evidence += min(0.10, gs_near_start * 0.03)
+
+    if stage.end_command:
+        end_time = stage.end_command.abs_time
+        gs_near_end = sum(
+            1 for a in all_anchors
+            if a.kind == "gunshot" and 0 < end_time - a.abs_time <= 15.0
+        )
+        if gs_near_end:
+            evidence += min(0.10, gs_near_end * 0.03)
+
+    return min(1.0, evidence)
+
+
+def _holistic_confidence(stage: Stage, all_anchors: list[Anchor] | None = None) -> float:
+    """Combined stage confidence from evidence depth model.
+
+    Uses the strongest evidence stream as primary driver, so a single
+    strong start OR end signal can carry a stage on its own.
+    """
+    sd = _start_depth(stage)
+    ed = _end_depth(stage)
+    ae = _audio_evidence(stage, all_anchors or [])
+
+    primary = max(sd, ed)
+    secondary = min(sd, ed)
+
+    # Cross-evidence: a strong signal on one side makes even a weak
+    # signal on the other side much more meaningful.
+    stronger = max(sd, ed)
+    weaker = min(sd, ed)
+    if stronger > 0.3 and weaker > 0.005:
+        both_bonus = 0.20 * stronger
+    elif sd > 0.05 and ed > 0.05:
+        both_bonus = 0.10
+    else:
+        both_bonus = 0.0
+
+    confidence = 0.55 * primary + 0.20 * secondary + 0.25 * ae + both_bonus
+    return min(1.0, confidence)
+
+
+def _score_all_stages(stages: list[Stage], anchors: list[Anchor]) -> None:
+    """Score all stages using holistic evidence model."""
     for stage in stages:
-        stage.confidence_boost = 0.0
-        reasons: list[str] = []
+        conf = _holistic_confidence(stage, anchors)
+        stage.confidence_boost = conf - _stage_base(stage)
+        log.info("  Stage %.0f-%.0fs holistic=%.2f (start=%.2f end=%.2f audio=%.2f)",
+                 stage.clip_start, stage.clip_end, conf,
+                 _start_depth(stage), _end_depth(stage),
+                 _audio_evidence(stage, anchors))
 
-        # beep within 10s after start → strong confirmation
-        if stage.beep:
-            reasons.append("has_beep(+0.3)")
-            stage.confidence_boost += 0.3
 
-        # gunshots within 10s after start (beep or standby) → shooting started
-        start_time = stage.clip_start
-        gunshots_after_start = [
-            a for a in anchors
-            if a.kind == "gunshot" and 0 < a.abs_time - start_time <= 15.0
-        ]
-        if gunshots_after_start:
-            boost = min(0.2, len(gunshots_after_start) * 0.05)
-            reasons.append(f"gunshots_after_start({len(gunshots_after_start)},+{boost:.2f})")
-            stage.confidence_boost += boost
+def _stage_base(stage: Stage) -> float:
+    """Raw base from best anchor score (used only for boost delta)."""
+    scores: list[float] = []
+    if stage.beep:
+        scores.append(stage.beep.score / 100.0)
+    if stage.standby:
+        scores.append(stage.standby.score / 100.0)
+    if stage.ready:
+        scores.append(stage.ready.score / 100.0)
+    if stage.end_command:
+        scores.append(stage.end_command.score / 100.0)
+    return max(scores) if scores else 0.0
 
-        # gunshots within 10s before end → shooting was happening
-        if stage.end_command:
-            end_time = stage.end_command.abs_time
-            gunshots_before_end = [
-                a for a in anchors
-                if a.kind == "gunshot" and 0 < end_time - a.abs_time <= 15.0
-            ]
-            if gunshots_before_end:
-                boost = min(0.2, len(gunshots_before_end) * 0.05)
-                reasons.append(f"gunshots_before_end({len(gunshots_before_end)},+{boost:.2f})")
-                stage.confidence_boost += boost
 
-        # has both start AND end → much more likely real
-        has_start = stage.beep or stage.standby or stage.ready
-        has_end = stage.end_command is not None
-        if has_start and has_end:
-            reasons.append("has_start_and_end(+0.2)")
-            stage.confidence_boost += 0.2
+def _keyword_abs_time(anchor: Anchor, keyword: str) -> float | None:
+    """Extract absolute timestamp of a specific keyword from anchor text.
 
-        # has standby (not just ready) → stronger start signal
-        if stage.standby:
-            reasons.append("has_standby(+0.1)")
-            stage.confidence_boost += 0.1
+    Anchor text looks like:
+      'make ready(100)@1550113798.0s → are you ready(100)@1550113841.7s → ...'
+    """
+    import re
+    for m in re.finditer(r'([\w\s]+?)\(\d+\)@([\d.]+)s', anchor.text):
+        if keyword in m.group(1).strip().lower():
+            return float(m.group(2))
+    return None
 
-        if reasons:
-            log.info("  Stage %.0f-%.0fs boost: %s total=+%.2f (effective=%.2f)",
-                     stage.clip_start, stage.clip_end,
-                     ", ".join(reasons), stage.confidence_boost,
-                     _effective_confidence(stage))
+
+def _pick_clip_start(stage: Stage) -> tuple[float, str]:
+    """Choose clip start time by priority.
+
+    1. "are you ready" keyword time
+    2. "stand by" / "standby" keyword time
+    3. beep time
+    4. earliest anchor time
+    5. (caller handles fallback from end)
+    """
+    best_anchor = stage.standby or stage.ready
+
+    # Priority 1: "are you ready" from the sequence anchor
+    if best_anchor:
+        t = _keyword_abs_time(best_anchor, 'are you ready')
+        if t is not None:
+            return t, "are_you_ready"
+
+    # Priority 2: "stand by" from the sequence anchor
+    if best_anchor:
+        for kw in ('stand by', 'standby'):
+            t = _keyword_abs_time(best_anchor, kw)
+            if t is not None:
+                return t, "standby"
+
+    # Priority 3: beep
+    if stage.beep:
+        return stage.beep.abs_time, "beep"
+
+    # Priority 4: earliest anchor we have
+    if best_anchor:
+        return best_anchor.abs_time, f"earliest_{best_anchor.kind}"
+
+    return 0.0, "unknown"
 
 
 def _build_stage_from_beep(
@@ -700,8 +828,6 @@ def _build_stage_from_beep(
     """Build a stage starting from a beep anchor."""
     beep = anchors[beep_idx]
     stage = Stage(beep=beep)
-    stage.clip_start = beep.abs_time
-    stage.start_reason = "beep"
 
     # look backwards for standby/ready within 30s
     for j in range(beep_idx - 1, -1, -1):
@@ -712,6 +838,8 @@ def _build_stage_from_beep(
             stage.standby = a
         elif a.kind == "ready" and stage.ready is None:
             stage.ready = a
+
+    stage.clip_start, stage.start_reason = _pick_clip_start(stage)
 
     if end_idx is not None:
         end_a = anchors[end_idx]
@@ -1046,7 +1174,7 @@ def _build_output_name(video_path: Path, creation_str: str, tag: str = "") -> st
 
 
 def _stage_confidence(stage: Stage) -> float:
-    """Base confidence = best anchor score. More anchors boost via _boost_all_stages."""
+    """Base confidence from best anchor score (legacy, used by _effective_confidence)."""
     scores: list[float] = []
     if stage.beep:
         scores.append(stage.beep.score / 100.0)
@@ -1104,6 +1232,16 @@ def _save_stage_debug(
 # Transcription helper
 # ---------------------------------------------------------------------------
 
+_WHISPER_PROMPT = (
+    "USPSA practical shooting match. Range officer commands: "
+    "Load and make ready. Make ready. Shooter ready. "
+    "Are you ready? Stand by. Standby. "
+    "If you are finished, unload and show clear. "
+    "If clear, hammer down and holster. Hammer down. Holster. "
+    "Range is clear. Stage is clear."
+)
+
+
 def _transcribe(
     wav_path: Path,
     config: ProcessingConfig,
@@ -1124,16 +1262,8 @@ def _transcribe(
         beam_size=5,
         word_timestamps=True,
         language="en",
-        initial_prompt=(
-            "USPSA practical shooting match. Range officer commands: "
-            "Load and make ready. Make ready. Shooter ready. "
-            "Are you ready? Stand by. Standby. "
-            "If you are finished, unload and show clear. "
-            "If clear, hammer down and holster. Hammer down. Holster. "
-            "Range is clear. Stage is clear."
-        ),
-        vad_filter=True,
-        vad_parameters={"min_silence_duration_ms": 500, "speech_pad_ms": 300},
+        initial_prompt=_WHISPER_PROMPT,
+        vad_filter=False,
     )
 
     segments: list[TranscriptSegment] = []
@@ -1147,6 +1277,45 @@ def _transcribe(
         ))
 
     return segments, cached_model
+
+
+def _transcribe_worker(args: tuple) -> tuple[int, list[TranscriptSegment]]:
+    """Standalone worker for parallel transcription (one per process)."""
+    from faster_whisper import WhisperModel
+
+    file_idx, video_path_str, wav_path_str, debug_dir_str, model_name, device, compute_type, reuse = args
+    video_path = Path(video_path_str)
+    wav_path = Path(wav_path_str)
+    debug_dir = Path(debug_dir_str)
+    transcript_path = debug_dir / f"{video_path.stem}_transcript.json"
+
+    if reuse and transcript_path.exists():
+        from video_stage_cutter.transcribe import load_transcript
+        segments = load_transcript(transcript_path)
+        print(f"  [{file_idx}] {video_path.name}: reused {len(segments)} segments")
+        return file_idx, segments
+
+    extract_audio(video_path, wav_path)
+
+    wm = WhisperModel(model_name, device=device, compute_type=compute_type)
+    segments_iter, _ = wm.transcribe(
+        str(wav_path), beam_size=5, word_timestamps=True,
+        language="en", initial_prompt=_WHISPER_PROMPT, vad_filter=False,
+    )
+
+    segments: list[TranscriptSegment] = []
+    for seg in segments_iter:
+        words = [
+            WordInfo(start=w.start, end=w.end, word=w.word, probability=w.probability)
+            for w in (seg.words or [])
+        ]
+        segments.append(TranscriptSegment(
+            start=seg.start, end=seg.end, text=seg.text.strip(), words=words,
+        ))
+
+    save_transcript(segments, transcript_path)
+    print(f"  [{file_idx}] {video_path.name}: transcribed {len(segments)} segments")
+    return file_idx, segments
 
 
 
@@ -1211,13 +1380,26 @@ def run_batch(
             log.info("  [%d] %s: epoch=%.1f duration=%.1fs", i, fi.path.name, fi.creation_epoch, fi.duration)
 
     # --- Phase 1A: transcribe all files ---
-    log.info("PASS 1A: Transcribing %d files ...", len(files))
-    whisper_model = None
-    for i, fi in enumerate(tqdm(files, desc="Pass 1A: transcribing")):
-        try:
-            whisper_model = _transcribe_file(fi, i, config, debug_dir, whisper_model)
-        except Exception as exc:
-            log.error("Failed to transcribe %s: %s", fi.path.name, exc)
+    if config.workers > 1:
+        log.info("PASS 1A: Transcribing %d files with %d workers ...", len(files), config.workers)
+        from concurrent.futures import ProcessPoolExecutor
+        worker_args = [
+            (i, str(fi.path), str(fi.wav_path), str(debug_dir),
+             config.model, config.device, config.compute_type, config.reuse_transcripts)
+            for i, fi in enumerate(files)
+        ]
+        with ProcessPoolExecutor(max_workers=config.workers) as pool:
+            for file_idx, segments in pool.map(_transcribe_worker, worker_args):
+                files[file_idx].segments = segments
+                log.info("  FILE [%d] %s: %d segments", file_idx, files[file_idx].path.name, len(segments))
+    else:
+        log.info("PASS 1A: Transcribing %d files ...", len(files))
+        whisper_model = None
+        for i, fi in enumerate(tqdm(files, desc="Pass 1A: transcribing")):
+            try:
+                whisper_model = _transcribe_file(fi, i, config, debug_dir, whisper_model)
+            except Exception as exc:
+                log.error("Failed to transcribe %s: %s", fi.path.name, exc)
 
     # --- Phase 1B: global phrase detection across all files ---
     log.info("PASS 1B: Detecting phrases on global timeline ...")

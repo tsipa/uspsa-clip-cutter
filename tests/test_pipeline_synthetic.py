@@ -208,7 +208,7 @@ class TestAssembleStages:
         assert len(stages) == 1
         assert stages[0].complete is False
         assert "fallback" in stages[0].end_reason
-        assert stages[0].duration <= 181  # ~180s fallback
+        assert stages[0].duration <= 121  # ~120s fallback
 
     def test_orphan_end_command(self) -> None:
         anchors = [
@@ -273,7 +273,7 @@ class TestReadyWithoutStandby:
         assert "fallback" in stages[0].end_reason
 
     def test_ready_plus_end_no_beep_is_confirmed(self) -> None:
-        """ready + end_command but no beep = confirmed stage with start_reason '*_no_beep'."""
+        """ready + end_command but no beep = confirmed stage."""
         anchors = [
             Anchor(kind="ready",       abs_time=100.0, file_idx=0, file_offset=5.0,  text="are you ready", score=90, end_offset=6.0),
             Anchor(kind="end_command", abs_time=130.0, file_idx=0, file_offset=35.0, text="hammer down",   score=85, end_offset=36.0),
@@ -281,7 +281,7 @@ class TestReadyWithoutStandby:
         stages = _assemble_stages(anchors)
         assert len(stages) == 1
         assert stages[0].complete is True
-        assert "no_beep" in stages[0].start_reason
+        assert stages[0].start_reason in ("are_you_ready", "earliest_ready")
 
     def test_standby_plus_end_no_beep_is_confirmed(self) -> None:
         """standby + end_command but no beep = confirmed stage."""
@@ -292,7 +292,7 @@ class TestReadyWithoutStandby:
         stages = _assemble_stages(anchors)
         assert len(stages) == 1
         assert stages[0].complete is True
-        assert "no_beep" in stages[0].start_reason
+        assert stages[0].start_reason in ("standby", "earliest_standby")
 
     def test_weak_ready_alone_dropped(self) -> None:
         """Weak 'ready' (low pattern score) without evidence = dropped."""
@@ -323,14 +323,14 @@ class TestReadyWithoutStandby:
         assert stages[0].complete is False
 
     def test_standby_only_no_beep_no_end_produces_fallback(self) -> None:
-        """standby but no beep and no end = 3min fallback from standby."""
+        """standby but no beep and no end = 2min fallback from standby."""
         anchors = [
             Anchor(kind="standby", abs_time=100.0, file_idx=0, file_offset=5.0, text="stand by", score=95, end_offset=6.0),
         ]
         stages = _assemble_stages(anchors)
         assert len(stages) == 1
         assert stages[0].complete is False
-        assert "no_beep" in stages[0].start_reason
+        assert stages[0].start_reason in ("standby", "earliest_standby")
         assert "fallback" in stages[0].end_reason
 
     def test_end_command_only_produces_fallback(self) -> None:
@@ -445,7 +445,7 @@ class TestFallbackOverlapTrimming:
         stage = Stage(
             end_command=Anchor(kind="end_command", abs_time=55.0, file_idx=0, file_offset=55.0,
                                text="hammer down", score=85, end_offset=56.0),
-            clip_start=55.0 - 180.0,  # -125, would be clamped elsewhere
+            clip_start=55.0 - 120.0,  # would be clamped elsewhere
             clip_end=56.0,
             start_reason="fallback_3min_no_start",
             end_reason="matched:hammer down",
@@ -468,7 +468,7 @@ class TestFallbackOverlapTrimming:
             beep=Anchor(kind="beep", abs_time=60.0, file_idx=0, file_offset=60.0,
                         text="timer_beep", score=80),
             clip_start=60.0,
-            clip_end=60.0 + 180.0,
+            clip_end=60.0 + 120.0,
             start_reason="beep",
             end_reason="fallback_3min_no_end",
             complete=False,

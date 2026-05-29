@@ -94,6 +94,9 @@ class PhraseMatch:
     score: float
     matched_phrase: str
     role: str
+    steps_found: int = 0
+    steps_total: int = 0
+    matched_step_orders: tuple[int, ...] = ()
 
 
 def detect_phrases(
@@ -155,6 +158,46 @@ def _extract_words(
     return words, starts, ends
 
 
+_MIN_FRAGMENT_WORD_LEN = 4
+
+
+def _keyword_fragments(keyword: str) -> list[tuple[str, float]]:
+    """Generate sub-phrase fragments from a multi-word keyword.
+
+    Each fragment carries a weight multiplier (0.0-1.0) reflecting how
+    much of the original phrase it covers. Shorter fragments = weaker
+    evidence but still useful when Whisper garbles part of the phrase.
+
+    "range is clear" →
+        ("range is clear", 1.0),   # full phrase
+        ("is clear", 0.50),        # 2-word suffix
+        ("range is", 0.50),        # 2-word prefix
+        ("range", 0.20),           # single word (≥4 chars only)
+        ("clear", 0.20),           # single word
+    """
+    kw_words = keyword.split()
+    n = len(kw_words)
+    if n <= 1:
+        return [(keyword, 1.0)]
+
+    fragments: list[tuple[str, float]] = [(keyword, 1.0)]
+
+    for length in range(n - 1, 1, -1):
+        multiplier = (length / n) * 0.75
+        seen: set[str] = set()
+        for start in range(n - length + 1):
+            frag = " ".join(kw_words[start : start + length])
+            if frag not in seen:
+                seen.add(frag)
+                fragments.append((frag, multiplier))
+
+    for word in kw_words:
+        if len(word) >= _MIN_FRAGMENT_WORD_LEN:
+            fragments.append((word, 0.20))
+
+    return fragments
+
+
 def _find_all_hits(
     words: list[str],
     word_starts: list[float],
@@ -162,39 +205,47 @@ def _find_all_hits(
     sequence: list[SequenceStep],
     base_threshold: float,
 ) -> list[KeywordHit]:
-    """Find all keyword occurrences for all steps."""
+    """Find all keyword occurrences for all steps, including partial fragments."""
     all_hits: list[KeywordHit] = []
 
     for step in sequence:
         for keyword in step.keywords:
-            kw_len = len(keyword.split())
-            effective_threshold = max(base_threshold, step.threshold)
+            for fragment, weight_mult in _keyword_fragments(keyword):
+                frag_len = len(fragment.split())
+                frag_weight = step.weight * weight_mult
 
-            for window_size in range(kw_len, kw_len + 2):
-                if window_size > len(words):
-                    continue
-                for i in range(len(words) - window_size + 1):
-                    has_gap = False
-                    for k in range(i, i + window_size - 1):
-                        if word_starts[k + 1] - word_ends[k] > MAX_WORD_GAP:
-                            has_gap = True
-                            break
-                    if has_gap:
+                if weight_mult < 0.3:
+                    effective_threshold = max(base_threshold, step.threshold, 90)
+                elif weight_mult < 1.0:
+                    effective_threshold = max(base_threshold, step.threshold, 80)
+                else:
+                    effective_threshold = max(base_threshold, step.threshold)
+
+                for window_size in range(frag_len, frag_len + 2):
+                    if window_size > len(words):
                         continue
+                    for i in range(len(words) - window_size + 1):
+                        has_gap = False
+                        for k in range(i, i + window_size - 1):
+                            if word_starts[k + 1] - word_ends[k] > MAX_WORD_GAP:
+                                has_gap = True
+                                break
+                        if has_gap:
+                            continue
 
-                    window_text = " ".join(words[i : i + window_size])
-                    score = fuzz.ratio(window_text, keyword)
-                    if score >= effective_threshold:
-                        all_hits.append(KeywordHit(
-                            keyword=keyword,
-                            step_order=step.order,
-                            start=word_starts[i],
-                            end=word_ends[i + window_size - 1],
-                            text=window_text,
-                            score=score,
-                            weight=step.weight,
-                            word_indices=tuple(range(i, i + window_size)),
-                        ))
+                        window_text = " ".join(words[i : i + window_size])
+                        score = fuzz.ratio(window_text, fragment)
+                        if score >= effective_threshold:
+                            all_hits.append(KeywordHit(
+                                keyword=keyword,
+                                step_order=step.order,
+                                start=word_starts[i],
+                                end=word_ends[i + window_size - 1],
+                                text=window_text,
+                                score=score,
+                                weight=frag_weight,
+                                word_indices=tuple(range(i, i + window_size)),
+                            ))
 
     all_hits = _dedup_hits(all_hits)
     return all_hits
@@ -307,6 +358,9 @@ def _seq_to_phrase_match(seq: SequenceMatch) -> PhraseMatch:
         score=seq.confidence * 100,
         matched_phrase=best.keyword,
         role=seq.role,
+        steps_found=seq.steps_found,
+        steps_total=seq.steps_total,
+        matched_step_orders=tuple(sorted(set(h.step_order for h in seq.hits))),
     )
 
 
