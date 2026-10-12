@@ -31,15 +31,17 @@ def _decoded_segments():
                                  word=word, probability=0.9)
                  for i, word in enumerate(end_text.split())]
     return [
-        SimpleNamespace(start=31.1, end=31.5, text=" stand by ", words=words),
-        SimpleNamespace(start=60.5, end=62.2, text=end_text, words=end_words),
-        SimpleNamespace(start=63, end=64, text="range noise", words=None),
+        SimpleNamespace(start=31.1, end=31.5, text=" stand by ", words=words, seek=3000),
+        SimpleNamespace(start=60.5, end=62.2, text=end_text, words=end_words, seek=6000),
+        SimpleNamespace(start=63, end=64, text="range noise", words=None, seek=6000),
     ]
 
 
 @pytest.fixture
 def whisper_backend(monkeypatch):
     model, batch = Mock(), Mock()
+    model.frames_per_second = 100
+    batch.model = model
     for runner in [model, batch]:
         runner.transcribe.side_effect = lambda *a, **kw: (iter(_decoded_segments()), None)
     module = SimpleNamespace(WhisperModel=Mock(return_value=model),
@@ -112,10 +114,11 @@ def test_normal_transcription_keeps_existing_options(tmp_path, whisper_backend):
 @pytest.mark.parametrize("batched", [False, True])
 def test_worker_uses_selected_transcription_mode(tmp_path, monkeypatch, whisper_backend, batched):
     video, wav = tmp_path / "source.mp4", _wav(tmp_path / "audio.wav", 65)
+    video.write_bytes(b"video")
     extract = Mock()
     monkeypatch.setattr(pipeline, "extract_audio", extract)
     index, segments = pipeline._transcribe_worker(
-        (3, str(video), str(wav), str(tmp_path), "large-v3", "cuda", "int8", False, batched, 3),
+        (3, str(video), str(wav), str(tmp_path), "large-v3", "cuda", "int8", False, False, batched, 3),
     )
     assert index == 3
     extract.assert_called_once_with(video, wav)
@@ -138,7 +141,7 @@ def test_reused_transcript_bypasses_batched_model(tmp_path, monkeypatch, whisper
     pipeline._transcribe_file(fi, 0, config, tmp_path, None)
     assert fi.segments == expected
     pipeline._transcribe_worker((0, str(fi.path), str(fi.wav_path), str(tmp_path),
-                                 "large-v3", "cuda", "int8", True, True, 2))
+                                 "large-v3", "cuda", "int8", True, False, True, 2))
     whisper_backend.WhisperModel.assert_not_called()
     whisper_backend.BatchedInferencePipeline.assert_not_called()
 

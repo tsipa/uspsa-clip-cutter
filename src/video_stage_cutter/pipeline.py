@@ -27,6 +27,9 @@ from video_stage_cutter.transcribe import (
     TranscriptSegment,
     WordInfo,
     save_transcript,
+    load_transcript_checkpoint,
+    save_transcript_checkpoint,
+    transcript_source,
 )
 
 log = logging.getLogger(__name__)
@@ -67,6 +70,7 @@ class ProcessingConfig:
     gpu_cq: int = 26
     batched: bool = False
     batch_size: int = 2
+    restore: bool = False
 
 
 # ---------------------------------------------------------------------------
@@ -189,15 +193,20 @@ def _transcribe_file(
     log.info("FILE [%d]: %s (%.1fs, created %s)", file_idx, fi.path.name, fi.duration, fi.creation_str)
 
     transcript_path = debug_dir / f"{fi.path.stem}_transcript.json"
+    checkpoint_path = debug_dir / f"{fi.path.stem}_transcript.partial.json"
 
-    if config.reuse_transcripts and transcript_path.exists():
+    if (config.reuse_transcripts or config.restore) and transcript_path.exists() and not checkpoint_path.exists():
         log.info("  Reusing transcript from %s", transcript_path)
         fi.segments = load_transcript(transcript_path)
     else:
         log.info("  Extracting audio ...")
         extract_audio(fi.path, fi.wav_path)
-        fi.segments, whisper_model = _transcribe(fi.wav_path, config, whisper_model)
+        fi.segments, whisper_model = _transcribe(
+            fi.wav_path, config, whisper_model,
+            checkpoint_path=checkpoint_path, video_path=fi.path,
+        )
         save_transcript(fi.segments, transcript_path)
+        checkpoint_path.unlink(missing_ok=True)
 
     log.info("  Transcript (%d segments):", len(fi.segments))
     for seg in fi.segments:
@@ -1263,14 +1272,14 @@ _WHISPER_PROMPT = (
 )
 
 
-def _batched_clip_timestamps(wav_path: Path) -> list[dict[str, float]]:
+def _batched_clip_timestamps(wav_path: Path, start: float = 0.0) -> list[dict[str, float]]:
     """Cover the entire WAV with <=30 s chunks, without VAD or time compression."""
     with wave.open(str(wav_path), "rb") as wav:
         frame_count, sample_rate = wav.getnframes(), wav.getframerate()
     chunk_frames = 30 * sample_rate
     return [
         {"start": start / sample_rate, "end": min(start + chunk_frames, frame_count) / sample_rate}
-        for start in range(0, frame_count, chunk_frames)
+        for start in range(round(start * sample_rate), frame_count, chunk_frames)
     ]
 
 
@@ -1278,11 +1287,40 @@ def _transcribe(
     wav_path: Path,
     config: ProcessingConfig,
     cached_model: object | None,
+    *,
+    checkpoint_path: Path | None = None,
+    video_path: Path | None = None,
 ) -> tuple[list[TranscriptSegment], object]:
     from faster_whisper import WhisperModel
 
     if config.batch_size < 1:
         raise ValueError("Transcription batch size must be at least 1")
+    segments: list[TranscriptSegment] = []
+    resume_from = 0.0
+    source = None
+    if checkpoint_path is not None:
+        if video_path is None:
+            raise ValueError("A checkpoint requires its source video path")
+        source = transcript_source(video_path, config.model)
+        if config.restore and checkpoint_path.exists():
+            try:
+                saved, resume_from = load_transcript_checkpoint(checkpoint_path, source)
+                with wave.open(str(wav_path), "rb") as wav:
+                    duration = wav.getnframes() / wav.getframerate()
+                if resume_from >= duration:
+                    raise ValueError("Checkpoint resume position is outside the recording")
+                # Replay the most recently decoded window: some of its segments
+                # may not have been yielded before interruption. Keep only the
+                # completed prefix, avoiding duplicate words or skipped audio.
+                # A previous window's last word can end a few milliseconds
+                # beyond the next seek offset after frame rounding. Retain by
+                # start time so that this completed segment is not lost.
+                segments = [s for s in saved if s.start < resume_from]
+                log.info("  Restoring %s at %.2fs (%d saved prefix segments)",
+                         wav_path.name, resume_from, len(segments))
+            except (ValueError, KeyError, TypeError) as exc:
+                log.warning("  Ignoring invalid checkpoint %s: %s", checkpoint_path.name, exc)
+                segments, resume_from = [], 0.0
     if cached_model is None:
         log.info("Loading Whisper model '%s' (device=%s, compute_type=%s) ...",
                  config.model, config.device, config.compute_type)
@@ -1298,13 +1336,15 @@ def _transcribe(
     if config.batched:
         batch_options = {
             "batch_size": config.batch_size,
-            "clip_timestamps": _batched_clip_timestamps(wav_path),
+            "clip_timestamps": _batched_clip_timestamps(wav_path, resume_from),
             "chunk_length": 30,
             "condition_on_previous_text": False,
         }
         log.info("  Transcribing %s in batches of %d (VAD off) ...", wav_path.name, config.batch_size)
     else:
         log.info("  Transcribing %s ...", wav_path.name)
+        if resume_from:
+            batch_options["clip_timestamps"] = [resume_from]
     segments_iter, _info = cached_model.transcribe(
         str(wav_path),
         beam_size=5,
@@ -1315,7 +1355,6 @@ def _transcribe(
         **batch_options,
     )
 
-    segments: list[TranscriptSegment] = []
     for seg in segments_iter:
         words = [
             WordInfo(start=w.start, end=w.end, word=w.word, probability=w.probability)
@@ -1324,6 +1363,10 @@ def _transcribe(
         segments.append(TranscriptSegment(
             start=seg.start, end=seg.end, text=seg.text.strip(), words=words,
         ))
+        if checkpoint_path is not None:
+            model = cached_model.model if config.batched else cached_model
+            window_start = seg.seek / model.frames_per_second
+            save_transcript_checkpoint(checkpoint_path, segments, source, window_start)
 
     return segments, cached_model
 
@@ -1331,13 +1374,14 @@ def _transcribe(
 def _transcribe_worker(args: tuple) -> tuple[int, list[TranscriptSegment]]:
     """Standalone worker for parallel transcription (one per process)."""
     (file_idx, video_path_str, wav_path_str, debug_dir_str,
-     model_name, device, compute_type, reuse, batched, batch_size) = args
+     model_name, device, compute_type, reuse, restore, batched, batch_size) = args
     video_path = Path(video_path_str)
     wav_path = Path(wav_path_str)
     debug_dir = Path(debug_dir_str)
     transcript_path = debug_dir / f"{video_path.stem}_transcript.json"
+    checkpoint_path = debug_dir / f"{video_path.stem}_transcript.partial.json"
 
-    if reuse and transcript_path.exists():
+    if (reuse or restore) and transcript_path.exists() and not checkpoint_path.exists():
         from video_stage_cutter.transcribe import load_transcript
         segments = load_transcript(transcript_path)
         print(f"  [{file_idx}] {video_path.name}: reused {len(segments)} segments")
@@ -1348,10 +1392,13 @@ def _transcribe_worker(args: tuple) -> tuple[int, list[TranscriptSegment]]:
     config = ProcessingConfig(
         model=model_name, device=device, compute_type=compute_type,
         batched=batched, batch_size=batch_size,
+        restore=restore,
     )
-    segments, _ = _transcribe(wav_path, config, None)
+    segments, _ = _transcribe(wav_path, config, None,
+                              checkpoint_path=checkpoint_path, video_path=video_path)
 
     save_transcript(segments, transcript_path)
+    checkpoint_path.unlink(missing_ok=True)
     print(f"  [{file_idx}] {video_path.name}: transcribed {len(segments)} segments")
     return file_idx, segments
 
@@ -1423,7 +1470,7 @@ def run_batch(
         from concurrent.futures import ProcessPoolExecutor
         worker_args = [
             (i, str(fi.path), str(fi.wav_path), str(debug_dir),
-             config.model, config.device, config.compute_type, config.reuse_transcripts,
+             config.model, config.device, config.compute_type, config.reuse_transcripts, config.restore,
              config.batched, config.batch_size)
             for i, fi in enumerate(files)
         ]

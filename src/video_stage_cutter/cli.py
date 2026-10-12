@@ -15,6 +15,7 @@ from video_stage_cutter.ffmpeg_utils import (
 )
 from video_stage_cutter.manifest import write_manifest
 from video_stage_cutter.pipeline import ProcessingConfig, run_batch
+from video_stage_cutter.power import prevent_sleep
 
 app = typer.Typer(
     name="uspsa-clip-cutter",
@@ -51,6 +52,7 @@ def run(
     beep_search_before: float = typer.Option(0.25, help="Seconds before standby end to start searching for the beep."),
     beep_search_after: float = typer.Option(10.0, help="Seconds after standby end to stop searching for the beep."),
     reuse_transcripts: bool = typer.Option(False, help="Reuse existing transcript JSON files from the debug directory instead of re-transcribing."),
+    restore: bool = typer.Option(False, "--restore", help="Reuse completed transcripts and resume partial transcription checkpoints from the output debug directory."),
     workers: int = typer.Option(1, help="Number of parallel transcription workers. Each loads its own Whisper model (~3GB RAM)."),
     verbose: bool = typer.Option(False, "-v", "--verbose", help="Enable debug logging."),
 ) -> None:
@@ -103,13 +105,14 @@ def run(
         beep_search_before=beep_search_before,
         beep_search_after=beep_search_after,
         reuse_transcripts=reuse_transcripts,
+        restore=restore,
         workers=workers,
     )
 
-    rows = run_batch(input_dir, output_dir, config)
-
     manifest_path = output_dir / "manifest.csv"
-    write_manifest(rows, manifest_path)
+    with prevent_sleep():
+        rows = run_batch(input_dir, output_dir, config)
+        write_manifest(rows, manifest_path)
 
     ok = sum(1 for r in rows if r.status == "ok")
     dr = sum(1 for r in rows if r.status == "dry_run")

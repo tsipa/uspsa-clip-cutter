@@ -195,6 +195,22 @@ Both options force re-encoding even when `--fast-cut` is supplied. They work for
 
 ---
 
+## Windows Sleep Prevention
+
+On Windows, the CLI automatically prevents **idle system sleep** throughout detection, transcription, cutting and manifest writing. It restores the prior thread execution state on completion, errors or Ctrl+C, without changing the Windows power plan. The display can still turn off. Manual sleep, closing a laptop lid and shutting down remain under Windows/user control. If Windows rejects the request, the program logs a warning and continues. Other platforms are unaffected.
+
+## Restoring an Interrupted Run
+
+Transcripts and progress checkpoints are stored in `<output>/debug` (or `--debug-dir`). Completed files use `<stem>_transcript.json`. During recognition, `<stem>_transcript.partial.json` is saved after every yielded segment, including its words and the current decoder-window offset. Writes are flushed and replaced atomically so an interruption cannot truncate the previous checkpoint. The partial file is removed only after the completed transcript is saved successfully.
+
+```powershell
+python -m video_stage_cutter "E:\cam\oct11" "E:\cam\oct11\crop" --device cuda --compress --stabilize --gpu-encode --batched --batch-size 2 --restore
+```
+
+`--restore` reuses completed transcripts (including those from earlier versions) and resumes partial files. It replays the last decoder window, retaining the completed prefix without duplicate words or compressed timestamps. In batched mode this usually reprocesses at most the last 30-second chunk; standard mode can also restart from a decoder-window boundary. Recognition happens again for an unfinished window because its remaining segments may not have been yielded before interruption. Partial checkpoints are validated against the source path, size, modification time and Whisper model; invalid/stale partials are logged and re-transcribed. Old completed transcripts without checkpoint metadata retain the existing cache-reuse behavior.
+
+Checkpoints are written automatically in new runs; `--restore` is only needed when restarting. Transcription begun in an older running process cannot gain checkpoints retroactively. `--reuse-transcripts` remains available for completed files; a partial checkpoint takes precedence over an older completed transcript. Existing video outputs are skipped unless `--overwrite` is supplied. If interrupted FFmpeg encoding left an incomplete output file, use `--overwrite` to regenerate it. Restoration covers transcription, not FFmpeg's internal encoder state.
+
 ## Expected Workflow
 
 1. **Put videos in one folder.** Copy your action camera files (.mp4, .mov, .m4v) into a single input folder.
@@ -269,6 +285,7 @@ In the debug directory (`<output_dir>/debug/` by default, or the path you pass w
 | `--max-clip-length` | `600.0` | Reject clips longer than this many seconds. |
 | `--overwrite` | off | Overwrite existing output files. Without this, existing outputs are skipped. |
 | `--dry-run` | off | Run detection and write manifest/debug files, but do not cut any video. |
+| `--restore` | off | Reuse completed transcripts and resume partial recognition from checkpoints in the output debug directory. |
 | `--phrase-threshold` | `70.0` | Fuzzy matching threshold for phrase detection (0-100). Lower = more lenient, higher = stricter. |
 | `--beep-search-before` | `0.25` | Seconds before "stand by" end to start searching for the timer beep. |
 | `--beep-search-after` | `10.0` | Seconds after "stand by" end to stop searching for the timer beep. Clamped to first end command if found earlier. |
