@@ -55,7 +55,7 @@ def test_stabilization_analysis_matches_concat_encode(tmp_path, monkeypatch):
     assert "smoothing=30:" in encode_filters
     assert "fps=" not in detection_filters
     assert encode_filters.endswith(",fps=30")
-    assert "optzoom=0:zoom=5:crop=black" in encode_filters
+    assert "optzoom=2:zoom=5:crop=black" in encode_filters
     assert detection[:detection.index("-map")] == encode[:encode.index("-map")]
     assert detection.index("-ss") < detection.index("-i")
     assert detection[detection.index("-ss") + 1] == "55.000"

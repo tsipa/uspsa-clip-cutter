@@ -158,7 +158,7 @@ def _render_processed_clip(
             ], work_dir)
             filters.append(
                 "vidstabtransform=input=transforms.trf:"
-                f"smoothing={smoothing}:optzoom=0:zoom=5:crop=black:interpol=bicubic"
+                f"smoothing={smoothing}:optzoom=2:zoom=5:crop=black:interpol=bicubic"
             )
             if compress:
                 filters.append("fps=30")
