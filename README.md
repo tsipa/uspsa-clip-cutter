@@ -150,6 +150,26 @@ Uses stream-copy instead of re-encoding. Much faster, but the clip may start a f
 python -m video_stage_cutter run "C:\videos" "C:\clips" --model small --device cpu --compute-type int8 --accurate-cut --end-padding 3.0 --keep-wav --dry-run -v
 ```
 
+## Compression and Stabilization
+
+```powershell
+python -m video_stage_cutter "C:\videos" "C:\clips" --compress
+python -m video_stage_cutter "C:\videos" "C:\clips" --compress --stabilize
+```
+
+`--compress` enables this ffmpeg output profile:
+
+- **1920x1080 (1080p), 30 FPS**, preserving the aspect ratio with padding when necessary.
+- **H.265 / HEVC** (`libx265`), **preset `slow`**, **CRF 26**, 8-bit `yuv420p`.
+- **Opus audio**, 64 kbit/s, VBR, maximum encoder complexity (`compression_level=10`), 48 kHz, stereo.
+- **MP4** with `hvc1` and `+faststart` for progressive playback.
+
+Compression uses constant quality, with **no file size or bitrate target**. A minute of footage around 20–30 MB is a rough expectation, not a guarantee; movement, noise and detail affect the result. Ten-minute clips keep the same quality settings and can be much larger. Tune quality/size with `--compress-crf 28` for smaller files or `--compress-crf 23` for better quality. The `slow` preset takes more encoding time. Opus in MP4 requires a player with Opus support.
+
+`--stabilize` separately enables two-pass image stabilization (`vidstabdetect` then `vidstabtransform`): shakiness 5, accuracy 15, smoothing radius 30 frames, automatic static zoom to hide exposed borders, and bicubic interpolation. Adjust the radius with `--stabilize-smoothing 15`; a higher value smooths more camera movement. Stabilization can crop the edges and adds processing time. Without `--compress`, stabilization retains the existing H.264/AAC encoding profile and source resolution/frame rate.
+
+Both options force re-encoding even when `--fast-cut` is supplied. They work for single-file clips and stages spanning multiple source files. Use a full ffmpeg build with `libx265`, `libopus`, and (for stabilization) `libvidstab`; required capabilities are checked before transcription. With `--dry-run`, encoding and stabilization are skipped.
+
 ---
 
 ## Expected Workflow
@@ -210,6 +230,10 @@ In the debug directory (`<output_dir>/debug/` by default, or the path you pass w
 | `--device` | `cpu` | Device for Whisper inference. Use `cpu` or `cuda` (NVIDIA GPU). |
 | `--compute-type` | `int8` | Numeric precision. `int8` for CPU, `float16` for GPU, `float32` for maximum accuracy. |
 | `--accurate-cut` / `--fast-cut` | `--accurate-cut` | Re-encode for frame-accurate boundaries (slower) or stream-copy (fast, may start on a prior keyframe). |
+| `--compress` | off | Encode 1920x1080/30 FPS H.265 slow CRF 26 + Opus 64k. Constant quality, no size target; overrides `--fast-cut`. |
+| `--compress-crf` | `26` | Quality for `--compress`, 0–51. Lower = better quality/larger files; higher = smaller files. |
+| `--stabilize` | off | Apply two-pass vid.stab image stabilization; overrides `--fast-cut`. |
+| `--stabilize-smoothing` | `30` | Smoothing radius in frames for `--stabilize`, 0–1000. |
 | `--keep-wav` | off | Keep the extracted WAV files in the debug directory instead of deleting them after processing. |
 | `--debug-dir` | `<output>/debug` | Custom directory for transcript and detection JSON files. |
 | `--start-padding` | `10.0` | Seconds to include before the detected start (beep or "are you ready"). |

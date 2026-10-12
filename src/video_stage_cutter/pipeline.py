@@ -58,6 +58,10 @@ class ProcessingConfig:
     beep_search_after: float = 10.0
     reuse_transcripts: bool = False
     workers: int = 1
+    compress: bool = False
+    compress_crf: int = 26
+    stabilize: bool = False
+    stabilize_smoothing: int = 30
 
 
 # ---------------------------------------------------------------------------
@@ -1119,6 +1123,10 @@ def _cut_stages(
                     accurate=config.accurate_cut,
                     min_clip_length=config.min_clip_length,
                     max_clip_length=config.max_clip_length,
+                    compress=config.compress,
+                    compress_crf=config.compress_crf,
+                    stabilize=config.stabilize,
+                    stabilize_smoothing=config.stabilize_smoothing,
                 )
             else:
                 source_paths = [files[si].path for si, _, _ in spans]
@@ -1134,6 +1142,10 @@ def _cut_stages(
                 concat_and_cut(
                     source_paths, output_path, global_start, global_end,
                     accurate=config.accurate_cut,
+                    compress=config.compress,
+                    compress_crf=config.compress_crf,
+                    stabilize=config.stabilize,
+                    stabilize_smoothing=config.stabilize_smoothing,
                 )
             row.status = "ok"
             row.output_file = str(output_path)

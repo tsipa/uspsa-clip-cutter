@@ -7,7 +7,12 @@ from pathlib import Path
 
 import typer
 
-from video_stage_cutter.ffmpeg_utils import FFmpegNotFoundError, check_ffmpeg_available
+from video_stage_cutter.ffmpeg_utils import (
+    FFmpegFeatureError,
+    FFmpegNotFoundError,
+    check_ffmpeg_available,
+    check_ffmpeg_features,
+)
 from video_stage_cutter.manifest import write_manifest
 from video_stage_cutter.pipeline import ProcessingConfig, run_batch
 
@@ -26,6 +31,10 @@ def run(
     device: str = typer.Option("cpu", help="Device for Whisper inference (cpu or cuda)."),
     compute_type: str = typer.Option("int8", help="Compute type (int8, float16, float32)."),
     accurate_cut: bool = typer.Option(True, "--accurate-cut/--fast-cut", help="Re-encode for frame-accurate cuts, or stream-copy for speed."),
+    compress: bool = typer.Option(False, "--compress", help="Compress to 1080p/30fps HEVC slow CRF 26 + Opus 64k. Constant quality, no size limit. Overrides --fast-cut."),
+    compress_crf: int = typer.Option(26, min=0, max=51, help="HEVC quality for --compress: lower = better quality/larger files, higher = smaller files."),
+    stabilize: bool = typer.Option(False, "--stabilize", help="Apply two-pass vid.stab image stabilization. Overrides --fast-cut."),
+    stabilize_smoothing: int = typer.Option(30, min=0, max=1000, help="Stabilization smoothing radius in frames; used with --stabilize."),
     keep_wav: bool = typer.Option(False, help="Keep extracted WAV files in the debug directory."),
     debug_dir: Path | None = typer.Option(None, help="Directory for debug/transcript files. Defaults to <output_dir>/debug."),
     start_padding: float = typer.Option(10.0, help="Seconds to include before the detected start (beep or 'are you ready')."),
@@ -50,7 +59,9 @@ def run(
 
     try:
         check_ffmpeg_available()
-    except FFmpegNotFoundError as exc:
+        if not dry_run:
+            check_ffmpeg_features(compress=compress, stabilize=stabilize)
+    except (FFmpegNotFoundError, FFmpegFeatureError) as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(code=1) from exc
 
@@ -58,11 +69,19 @@ def run(
         typer.echo(f"Input directory does not exist: {input_dir}", err=True)
         raise typer.Exit(code=1)
 
+    if (compress or stabilize) and not accurate_cut:
+        logging.getLogger(__name__).info("Compression/stabilization requires re-encoding; overriding --fast-cut")
+        accurate_cut = True
+
     config = ProcessingConfig(
         model=model,
         device=device,
         compute_type=compute_type,
         accurate_cut=accurate_cut,
+        compress=compress,
+        compress_crf=compress_crf,
+        stabilize=stabilize,
+        stabilize_smoothing=stabilize_smoothing,
         keep_wav=keep_wav,
         debug_dir=debug_dir,
         start_padding=start_padding,

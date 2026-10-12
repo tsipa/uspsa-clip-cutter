@@ -28,4 +28,5 @@ where = ["src"]
 [tool.pytest.ini_options]
 markers = [
     "real_video: tests that require local large real video files (not run in CI)",
+    "ffmpeg: integration tests requiring local ffmpeg/ffprobe and optional output features",
 ]
