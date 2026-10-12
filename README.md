@@ -193,6 +193,16 @@ $env:PATH += ";C:\Users\Ts\beep\uspsa-clip-cutter\.venv\Lib\site-packages\nvidia
 
 Both options force re-encoding even when `--fast-cut` is supplied. They work for single-file clips and stages spanning multiple source files. For concatenated clips, explicit source durations allow input seeking to the relevant file/keyframe; input and output duration limits bound processing to the selected interval plus decoder preroll. Audio and video share the seek origin. As with the existing concat demuxer, sources must have compatible streams, codecs and time bases. Use a full ffmpeg build with `libx265`, AAC, and (for stabilization) `libvidstab`; required capabilities are checked before transcription. With `--dry-run`, encoding and stabilization are skipped.
 
+### Parallel video processing
+
+```powershell
+python -m video_stage_cutter "E:\cam\oct11" "E:\cam\oct11\crop" --device cuda --compress --stabilize --gpu-encode --restore --video-workers 2
+```
+
+`--video-workers` (minimum 1, default **1**) controls how many clips FFmpeg processes simultaneously, independently of Whisper's `--workers` and `--batch-size`. Each clip runs its own stabilization detection followed by transformation and encoding, with separate temporary files. Manifest and debug records retain stage order, errors are recorded per clip, and existing outputs are skipped as before. Stages targeting the same output filename are processed sequentially to preserve skip/overwrite behavior.
+
+Start with two video workers. Each FFmpeg process can also use multiple CPU threads, so more workers increase CPU, RAM, disk and encoder load and may not improve speed. Changing the option requires restarting the CLI; `--restore` reuses transcripts. Queued clips are canceled on interruption; shutdown waits for active FFmpeg calls to exit.
+
 ---
 
 ## Windows Sleep Prevention
@@ -277,6 +287,7 @@ In the debug directory (`<output_dir>/debug/` by default, or the path you pass w
 | `--gpu-cq` | `26` | GPU target quality, 1–51. Lower = better quality/larger files; higher = smaller files. Separate from CPU CRF. |
 | `--stabilize` | off | Apply two-pass vid.stab image stabilization; overrides `--fast-cut`. |
 | `--stabilize-smoothing` | `30` | Smoothing radius in 30-FPS-equivalent frames, 0–1000. Scaled to source FPS: default 30 becomes 60 source frames at 60 FPS (~1 second per side). |
+| `--video-workers` | `1` | Clips processed simultaneously by FFmpeg, including stabilization (minimum 1). Independent of transcription workers. |
 | `--keep-wav` | off | Keep the extracted WAV files in the debug directory instead of deleting them after processing. |
 | `--debug-dir` | `<output>/debug` | Custom directory for transcript and detection JSON files. |
 | `--start-padding` | `10.0` | Seconds to include before the detected start (beep or "are you ready"). |

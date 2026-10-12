@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import wave
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -71,6 +72,7 @@ class ProcessingConfig:
     batched: bool = False
     batch_size: int = 2
     restore: bool = False
+    video_workers: int = 1
 
 
 # ---------------------------------------------------------------------------
@@ -1054,128 +1056,165 @@ def _cut_stages(
     """Map each stage back to file(s) and cut."""
     rows: list[ManifestRow] = []
 
-    for i, stage in enumerate(stages):
-        log.info("=" * 60)
-        log.info("CUTTING STAGE #%d", i + 1)
+    if config.video_workers < 1:
+        raise ValueError("Video workers must be at least 1")
+    pool = ThreadPoolExecutor(max_workers=config.video_workers) if config.video_workers > 1 else None
+    pending: dict[Path, Future[None]] = {}
+    if pool is not None:
+        log.info("Processing clips with %d video workers", config.video_workers)
+    try:
+        for i, stage in enumerate(stages):
+            log.info("=" * 60)
+            log.info("CUTTING STAGE #%d", i + 1)
 
-        if stage.complete:
-            tag = ""
-        elif stage.beep and not stage.end_command:
-            tag = "no_end"
-        elif stage.end_command and not stage.beep:
-            tag = "no_start"
-        else:
-            tag = "incomplete"
+            if stage.complete:
+                tag = ""
+            elif stage.beep and not stage.end_command:
+                tag = "no_end"
+            elif stage.end_command and not stage.beep:
+                tag = "no_start"
+            else:
+                tag = "incomplete"
 
-        if not stage.complete:
-            log.error(
-                "Stage #%d is INCOMPLETE (%s): start_reason=%s end_reason=%s",
-                i + 1, tag, stage.start_reason, stage.end_reason,
+            if not stage.complete:
+                log.error(
+                    "Stage #%d is INCOMPLETE (%s): start_reason=%s end_reason=%s",
+                    i + 1, tag, stage.start_reason, stage.end_reason,
+                )
+
+            clip_start = stage.clip_start - config.start_padding
+            clip_end = stage.clip_end + config.end_padding
+
+            spans = _find_file_spans(clip_start, clip_end, files)
+            if not spans:
+                rows.append(ManifestRow(
+                    source_file="unknown",
+                    status="failed",
+                    error_message=f"Stage #{i+1}: could not map to any file",
+                ))
+                continue
+
+            primary = files[spans[0][0]]
+            output_name = _build_output_name(primary.path, primary.creation_str, tag)
+            output_path = output_dir / output_name
+
+            duration = clip_end - clip_start
+            row = ManifestRow(
+                source_file=" + ".join(files[fi].path.name for fi, _, _ in spans),
+                creation_time=primary.creation_iso,
+                duration=f"{duration:.3f}",
+                start_offset=f"{clip_start - primary.creation_epoch:.3f}",
+                end_offset=f"{clip_end - primary.creation_epoch:.3f}",
+                start_reason=stage.start_reason,
+                end_reason=stage.end_reason,
+                confidence=f"{_effective_confidence(stage):.2f}",
             )
 
-        clip_start = stage.clip_start - config.start_padding
-        clip_end = stage.clip_end + config.end_padding
+            _save_stage_debug(stage, i + 1, files, debug_dir)
 
-        spans = _find_file_spans(clip_start, clip_end, files)
-        if not spans:
-            rows.append(ManifestRow(
-                source_file="unknown",
-                status="failed",
-                error_message=f"Stage #{i+1}: could not map to any file",
-            ))
-            continue
+            # Multiple stages can share the existing output naming scheme. Preserve
+            # sequential skip/overwrite behavior and never write one file concurrently.
+            previous = pending.pop(output_path, None)
+            if previous is not None:
+                previous.result()
 
-        primary = files[spans[0][0]]
-        output_name = _build_output_name(primary.path, primary.creation_str, tag)
-        output_path = output_dir / output_name
+            if output_path.exists() and not config.overwrite:
+                row.status = "skipped"
+                row.output_file = str(output_path)
+                row.error_message = "Output already exists (use --overwrite)"
+                rows.append(row)
+                continue
 
-        duration = clip_end - clip_start
-        row = ManifestRow(
-            source_file=" + ".join(files[fi].path.name for fi, _, _ in spans),
-            creation_time=primary.creation_iso,
-            duration=f"{duration:.3f}",
-            start_offset=f"{clip_start - primary.creation_epoch:.3f}",
-            end_offset=f"{clip_end - primary.creation_epoch:.3f}",
-            start_reason=stage.start_reason,
-            end_reason=stage.end_reason,
-            confidence=f"{_effective_confidence(stage):.2f}",
-        )
+            if config.dry_run:
+                row.status = "dry_run"
+                row.output_file = str(output_path)
+                log.info("  DRY RUN: would write %s", output_name)
+                rows.append(row)
+                continue
 
-        _save_stage_debug(stage, i + 1, files, debug_dir)
+            if duration < config.min_clip_length:
+                row.status = "failed"
+                row.error_message = f"Clip too short: {duration:.1f}s"
+                rows.append(row)
+                continue
+            if duration > config.max_clip_length:
+                row.status = "failed"
+                row.error_message = f"Clip too long: {duration:.1f}s"
+                rows.append(row)
+                continue
 
-        if output_path.exists() and not config.overwrite:
-            row.status = "skipped"
-            row.output_file = str(output_path)
-            row.error_message = "Output already exists (use --overwrite)"
             rows.append(row)
-            continue
-
-        if config.dry_run:
-            row.status = "dry_run"
-            row.output_file = str(output_path)
-            log.info("  DRY RUN: would write %s", output_name)
-            rows.append(row)
-            continue
-
-        if duration < config.min_clip_length:
-            row.status = "failed"
-            row.error_message = f"Clip too short: {duration:.1f}s"
-            rows.append(row)
-            continue
-        if duration > config.max_clip_length:
-            row.status = "failed"
-            row.error_message = f"Clip too long: {duration:.1f}s"
-            rows.append(row)
-            continue
-
-        try:
-            if len(spans) == 1:
-                fi, local_start, local_end = spans[0]
-                log.info("  Single-file cut: %s %.2f-%.2fs", files[fi].path.name, local_start, local_end)
-                cut_clip(
-                    files[fi].path, output_path, local_start, local_end,
-                    accurate=config.accurate_cut,
-                    min_clip_length=config.min_clip_length,
-                    max_clip_length=config.max_clip_length,
-                    compress=config.compress,
-                    compress_crf=config.compress_crf,
-                    stabilize=config.stabilize,
-                    stabilize_smoothing=config.stabilize_smoothing,
-                    gpu_encode=config.gpu_encode,
-                    gpu_cq=config.gpu_cq,
-                )
+            if pool is None:
+                _render_stage(spans, files, output_path, config, row, duration)
             else:
-                source_paths = [files[si].path for si, _, _ in spans]
-                global_start = spans[0][1]
-                # concat timeline: full files in order, so offset of last file
-                # = sum of full durations of all preceding files
-                global_end = sum(files[si].duration for si, _, _ in spans[:-1]) + spans[-1][2]
-                log.info(
-                    "  Cross-file cut: %s, global_start=%.2f global_end=%.2f",
-                    " + ".join(files[si].path.name for si, _, _ in spans),
-                    global_start, global_end,
+                pending[output_path] = pool.submit(
+                    _render_stage, spans, files, output_path, config, row, duration,
                 )
-                concat_and_cut(
-                    source_paths, output_path, global_start, global_end,
-                    accurate=config.accurate_cut,
-                    compress=config.compress,
-                    compress_crf=config.compress_crf,
-                    stabilize=config.stabilize,
-                    stabilize_smoothing=config.stabilize_smoothing,
-                    gpu_encode=config.gpu_encode,
-                    gpu_cq=config.gpu_cq,
-                )
-            row.status = "ok"
-            row.output_file = str(output_path)
-            log.info("  Wrote %s (%.1fs)", output_name, duration)
-        except Exception as exc:
-            row.status = "failed"
-            row.error_message = str(exc)
-            log.error("  Cut failed: %s", exc)
 
-        rows.append(row)
+        for future in pending.values():
+            future.result()
 
-    return rows
+        return rows
+    finally:
+        if pool is not None:
+            # Cancel queued clips on interruption; wait for active FFmpeg calls.
+            pool.shutdown(wait=True, cancel_futures=True)
+
+
+def _render_stage(
+    spans: list[tuple[int, float, float]],
+    files: list[FileInfo],
+    output_path: Path,
+    config: ProcessingConfig,
+    row: ManifestRow,
+    duration: float,
+) -> None:
+    """Render one clip; each FFmpeg call owns its temporary stabilization files."""
+    output_name = output_path.name
+    try:
+        if len(spans) == 1:
+            fi, local_start, local_end = spans[0]
+            log.info("  Single-file cut: %s %.2f-%.2fs", files[fi].path.name, local_start, local_end)
+            cut_clip(
+                files[fi].path, output_path, local_start, local_end,
+                accurate=config.accurate_cut,
+                min_clip_length=config.min_clip_length,
+                max_clip_length=config.max_clip_length,
+                compress=config.compress,
+                compress_crf=config.compress_crf,
+                stabilize=config.stabilize,
+                stabilize_smoothing=config.stabilize_smoothing,
+                gpu_encode=config.gpu_encode,
+                gpu_cq=config.gpu_cq,
+            )
+        else:
+            source_paths = [files[si].path for si, _, _ in spans]
+            global_start = spans[0][1]
+            # concat timeline: full files in order, so offset of last file
+            # = sum of full durations of all preceding files
+            global_end = sum(files[si].duration for si, _, _ in spans[:-1]) + spans[-1][2]
+            log.info(
+                "  Cross-file cut: %s, global_start=%.2f global_end=%.2f",
+                " + ".join(files[si].path.name for si, _, _ in spans),
+                global_start, global_end,
+            )
+            concat_and_cut(
+                source_paths, output_path, global_start, global_end,
+                accurate=config.accurate_cut,
+                compress=config.compress,
+                compress_crf=config.compress_crf,
+                stabilize=config.stabilize,
+                stabilize_smoothing=config.stabilize_smoothing,
+                gpu_encode=config.gpu_encode,
+                gpu_cq=config.gpu_cq,
+            )
+        row.status = "ok"
+        row.output_file = str(output_path)
+        log.info("  Wrote %s (%.1fs)", output_name, duration)
+    except Exception as exc:
+        row.status = "failed"
+        row.error_message = str(exc)
+        log.error("  Cut failed for %s: %s", output_name, exc)
 
 
 def _find_file_spans(

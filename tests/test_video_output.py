@@ -6,6 +6,7 @@ import json
 import re
 import shutil
 import subprocess
+from threading import Lock
 from fractions import Fraction
 from pathlib import Path
 from unittest.mock import Mock
@@ -171,7 +172,8 @@ def test_missing_features_fail_with_actionable_error(monkeypatch):
 
 @pytest.mark.parametrize("cross_file", [False, True])
 @pytest.mark.parametrize("gpu_encode", [False, True])
-def test_pipeline_passes_output_options(tmp_path, monkeypatch, cross_file, gpu_encode):
+@pytest.mark.parametrize("video_workers", [1, 2])
+def test_pipeline_passes_output_options(tmp_path, monkeypatch, cross_file, gpu_encode, video_workers):
     files = [pipeline.FileInfo(
         path=tmp_path / f"source{i}.mp4", wav_path=tmp_path / f"source{i}.wav",
         duration=60, creation_epoch=1000 + 60 * i,
@@ -183,7 +185,7 @@ def test_pipeline_passes_output_options(tmp_path, monkeypatch, cross_file, gpu_e
     monkeypatch.setattr(pipeline, "_save_stage_debug", Mock())
     config = pipeline.ProcessingConfig(start_padding=0, end_padding=0, compress=True,
                                        compress_crf=28, stabilize=True, stabilize_smoothing=15,
-                                       gpu_encode=gpu_encode, gpu_cq=29)
+                                       gpu_encode=gpu_encode, gpu_cq=29, video_workers=video_workers)
     rows = pipeline._cut_stages([stage], files, tmp_path / "out", config, tmp_path)
     assert rows[0].status == "ok"
     assert cut.call_args.kwargs["compress"] and cut.call_args.kwargs["stabilize"]
@@ -337,6 +339,49 @@ def test_real_ffmpeg_output(ffmpeg_sources, tmp_path, mode):
     # Check both streams can be decoded all the way through.
     subprocess.run(["ffmpeg", "-v", "error", "-i", str(output), "-f", "null", "-"],
                    check=True, capture_output=True, text=True)
+
+
+@pytest.mark.ffmpeg
+@pytest.mark.parametrize("source_rate", [30, 60])
+@pytest.mark.parametrize("stabilize", [False, True])
+@pytest.mark.parametrize("gpu_encode", [False, True])
+def test_parallel_pipeline_preserves_timing_and_private_passes(
+    ffmpeg_sources_by_rate, tmp_path, monkeypatch, request, source_rate, stabilize, gpu_encode,
+):
+    if gpu_encode:
+        request.getfixturevalue("nvenc_available")
+    files = [pipeline.FileInfo(
+        path=path, wav_path=tmp_path / f"source{i}.wav", duration=4,
+        creation_epoch=4 * i, creation_str=f"2026-10-11_12-00-0{i}",
+        creation_iso="2026-10-11T12:00:00",
+    ) for i, path in enumerate(ffmpeg_sources_by_rate[source_rate])]
+    # Render a cross-file clip and a fractional single-file cut concurrently.
+    stages = [pipeline.Stage(clip_start=3, clip_end=6, complete=True),
+              pipeline.Stage(clip_start=5.217, clip_end=6.717, complete=True)]
+    config = pipeline.ProcessingConfig(
+        video_workers=2, compress=True, stabilize=stabilize, gpu_encode=gpu_encode,
+        start_padding=0, end_padding=0, min_clip_length=0.1, stabilize_smoothing=5,
+    )
+    output, debug = tmp_path / "out", tmp_path / "debug"
+    debug.mkdir()
+    passes, lock = {}, Lock()
+    render = ffmpeg_utils._run_render
+
+    def record(cmd, cwd):
+        with lock:
+            passes.setdefault(cwd, []).append("vidstabdetect=" in " ".join(cmd))
+        render(cmd, cwd)
+
+    monkeypatch.setattr(ffmpeg_utils, "_run_render", record)
+    rows = pipeline._cut_stages(stages, files, output, config, debug)
+    assert [row.status for row in rows] == ["ok", "ok"], [row.error_message for row in rows]
+    assert rows[0].source_file == " + ".join(file.path.name for file in files)
+    assert rows[1].source_file == files[1].path.name
+    _assert_timing(Path(rows[0].output_file), 3, [0.5, 2.5])
+    _assert_timing(Path(rows[1].output_file), 1.5, [5.5 - 5.217, 6.5 - 5.217])
+    assert len(passes) == 2
+    assert all(phases == ([True, False] if stabilize else [False]) for phases in passes.values())
+    assert all(not cwd.exists() for cwd in passes)
 
 
 def _probe(path):

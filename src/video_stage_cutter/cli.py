@@ -54,6 +54,7 @@ def run(
     reuse_transcripts: bool = typer.Option(False, help="Reuse existing transcript JSON files from the debug directory instead of re-transcribing."),
     restore: bool = typer.Option(False, "--restore", help="Reuse completed transcripts and resume partial transcription checkpoints from the output debug directory."),
     workers: int = typer.Option(1, help="Number of parallel transcription workers. Each loads its own Whisper model (~3GB RAM)."),
+    video_workers: int = typer.Option(1, min=1, help="Number of clips processed in parallel by FFmpeg (including stabilization). Independent of Whisper --workers."),
     verbose: bool = typer.Option(False, "-v", "--verbose", help="Enable debug logging."),
 ) -> None:
     """Scan INPUT_DIR for videos, detect stage boundaries, and cut clips into OUTPUT_DIR."""
@@ -107,6 +108,7 @@ def run(
         reuse_transcripts=reuse_transcripts,
         restore=restore,
         workers=workers,
+        video_workers=video_workers,
     )
 
     manifest_path = output_dir / "manifest.csv"
