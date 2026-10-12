@@ -34,7 +34,7 @@ def run(
     compress: bool = typer.Option(False, "--compress", help="Compress to at most 1080p/30fps HEVC slow CRF 26 + AAC 96k, without upscaling. Overrides --fast-cut."),
     compress_crf: int = typer.Option(26, min=0, max=51, help="HEVC quality for --compress: lower = better quality/larger files, higher = smaller files."),
     stabilize: bool = typer.Option(False, "--stabilize", help="Apply two-pass vid.stab image stabilization. Overrides --fast-cut."),
-    stabilize_smoothing: int = typer.Option(30, min=0, max=1000, help="Stabilization smoothing radius in frames; used with --stabilize."),
+    stabilize_smoothing: int = typer.Option(30, min=0, max=1000, help="Stabilization radius in 30-fps-equivalent frames; scaled to source FPS (30 means ~1 second per side)."),
     keep_wav: bool = typer.Option(False, help="Keep extracted WAV files in the debug directory."),
     debug_dir: Path | None = typer.Option(None, help="Directory for debug/transcript files. Defaults to <output_dir>/debug."),
     start_padding: float = typer.Option(10.0, help="Seconds to include before the detected start (beep or 'are you ready')."),

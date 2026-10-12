@@ -8,6 +8,7 @@ import math
 import shutil
 import subprocess
 import tempfile
+from fractions import Fraction
 from pathlib import Path
 
 log = logging.getLogger(__name__)
@@ -62,6 +63,7 @@ def _render_processed_clip(
     stabilize: bool,
     stabilize_smoothing: int,
     start: float = 0.0,
+    source_fps: float = 30.0,
 ) -> Path:
     """Render with optional constant-quality HEVC and vid.stab stabilization.
 
@@ -79,11 +81,16 @@ def _render_processed_clip(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     filters = []
     if compress:
+        if not stabilize:
+            filters.append("fps=30")
         filters += [
-            "fps=30",
             "scale=w='min(iw,1920)':h='min(ih,1080)':"
             "force_original_aspect_ratio=decrease:force_divisible_by=2",
         ]
+        if stabilize:
+            # Prevent encoder pixel-format negotiation from making the two
+            # stabilization passes see different scaled pixel data.
+            filters.append("format=yuv420p")
         log.info(
             "Compression: up to 1920x1080 / 30 fps, HEVC slow CRF %d, "
             "AAC 96 kbit/s; constant quality, no file size limit (%.1fs)",
@@ -101,7 +108,16 @@ def _render_processed_clip(
             *input_args, "-t", f"{duration:.3f}",
         ]
         if stabilize:
-            log.info("Stabilization: vid.stab, smoothing=%d frames", stabilize_smoothing)
+            if not math.isfinite(source_fps) or source_fps <= 0:
+                raise ValueError("Source frame rate must be positive and finite")
+            # The CLI radius is expressed in frames at 30 fps, so 30 means
+            # approximately one second on either side at any source frame rate.
+            smoothing = int(stabilize_smoothing * source_fps / 30 + 0.5)
+            smoothing = max(1 if stabilize_smoothing else 0, smoothing)
+            if smoothing > 1000:
+                log.warning("Source-rate smoothing exceeds vid.stab's limit; clamping to 1000 frames")
+                smoothing = 1000
+            log.info("Stabilization: vid.stab at %.3f fps, smoothing=%d source frames", source_fps, smoothing)
             detection = [*filters, "vidstabdetect=shakiness=5:accuracy=15:result=transforms.trf"]
             _run_render([
                 *base, "-map", "0:v:0", "-vf", ",".join(detection),
@@ -109,8 +125,10 @@ def _render_processed_clip(
             ], work_dir)
             filters.append(
                 "vidstabtransform=input=transforms.trf:"
-                f"smoothing={stabilize_smoothing}:optzoom=0:zoom=5:crop=black:interpol=bicubic"
+                f"smoothing={smoothing}:optzoom=0:zoom=5:crop=black:interpol=bicubic"
             )
+            if compress:
+                filters.append("fps=30")
         video_args = ["-vf", ",".join(filters)] if filters else []
         if compress:
             video_args += [
@@ -186,6 +204,7 @@ def cut_video(
             output_path, end - start, compress=compress, compress_crf=compress_crf,
             stabilize=stabilize, stabilize_smoothing=stabilize_smoothing,
             start=start,
+            source_fps=get_frame_rate(video_path) if stabilize else 30.0,
         )
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -233,6 +252,27 @@ def get_duration(video_path: Path) -> float:
     return float(data["format"]["duration"])
 
 
+def get_frame_rate(video_path: Path) -> float:
+    """Read the first video stream's average FPS, with nominal FPS as fallback."""
+    result = subprocess.run([
+        "ffprobe", "-v", "error", "-select_streams", "v:0",
+        "-show_entries", "stream=avg_frame_rate,r_frame_rate", "-of", "json",
+        str(video_path),
+    ], capture_output=True, text=True)
+    if result.returncode != 0:
+        raise RuntimeError(f"ffprobe failed for {video_path}: {result.stderr}")
+    streams = json.loads(result.stdout).get("streams", [])
+    if streams:
+        for name in ("avg_frame_rate", "r_frame_rate"):
+            try:
+                fps = float(Fraction(streams[0].get(name, "0/0")))
+            except (ValueError, ZeroDivisionError, OverflowError):
+                continue
+            if math.isfinite(fps) and fps > 0:
+                return fps
+    raise RuntimeError(f"Cannot determine video frame rate for {video_path}")
+
+
 def concat_and_cut(
     video_paths: list[Path],
     output_path: Path,
@@ -252,6 +292,16 @@ def concat_and_cut(
     # file/keyframe instead of decoding everything before the clip. Probing
     # first also avoids leaving a temporary list behind if a probe fails.
     durations = [get_duration(vp) for vp in video_paths] if compress or stabilize else []
+    source_fps = 30.0
+    if stabilize:
+        # Use the file containing the clip start, including seeks past whole
+        # files. Compatible camera chapters normally have a constant frame rate.
+        offset = start
+        for vp, file_duration in zip(video_paths, durations):
+            if offset < file_duration:
+                source_fps = get_frame_rate(vp)
+                break
+            offset -= file_duration
     with tempfile.NamedTemporaryFile(
         mode="w", suffix=".txt", delete=False, prefix="concat_", encoding="utf-8",
     ) as f:
@@ -269,6 +319,7 @@ def concat_and_cut(
                 output_path, end - start, compress=compress, compress_crf=compress_crf,
                 stabilize=stabilize, stabilize_smoothing=stabilize_smoothing,
                 start=start,
+                source_fps=source_fps,
             )
         if accurate:
             cmd = [

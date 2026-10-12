@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 from fractions import Fraction
@@ -21,10 +22,13 @@ from video_stage_cutter.ffmpeg_utils import concat_and_cut, cut_video
 def test_compression_quality_does_not_depend_on_duration(tmp_path, monkeypatch, duration):
     render = Mock()
     monkeypatch.setattr(ffmpeg_utils, "_run_render", render)
+    probe = Mock()
+    monkeypatch.setattr(ffmpeg_utils, "get_frame_rate", probe)
     cut_video(tmp_path / "input.mp4", tmp_path / "out.mp4", 5, 5 + duration,
               accurate=False, compress=True)
     # One CRF encode for any length; no size target or second encode pass.
     render.assert_called_once()
+    probe.assert_not_called()
     cmd = render.call_args.args[0]
     assert cmd[cmd.index("-crf") + 1] == "26"
     assert cmd[cmd.index("-preset") + 1] == "slow"
@@ -39,6 +43,7 @@ def test_stabilization_analysis_matches_concat_encode(tmp_path, monkeypatch):
     render = Mock()
     monkeypatch.setattr(ffmpeg_utils, "_run_render", render)
     monkeypatch.setattr(ffmpeg_utils, "get_duration", Mock(return_value=60.0))
+    monkeypatch.setattr(ffmpeg_utils, "get_frame_rate", Mock(return_value=60.0))
     concat_and_cut([tmp_path / "a.mp4", tmp_path / "b.mp4"], tmp_path / "out.mp4",
                    55, 70, accurate=False, compress=True, stabilize=True,
                    stabilize_smoothing=15)
@@ -47,7 +52,9 @@ def test_stabilization_analysis_matches_concat_encode(tmp_path, monkeypatch):
     detection_filters = detection[detection.index("-vf") + 1]
     encode_filters = encode[encode.index("-vf") + 1]
     assert detection_filters.split(",vidstabdetect")[0] == encode_filters.split(",vidstabtransform")[0]
-    assert "smoothing=15" in encode_filters
+    assert "smoothing=30:" in encode_filters
+    assert "fps=" not in detection_filters
+    assert encode_filters.endswith(",fps=30")
     assert "optzoom=0:zoom=5:crop=black" in encode_filters
     assert detection[:detection.index("-map")] == encode[:encode.index("-map")]
     assert detection.index("-ss") < detection.index("-i")
@@ -59,6 +66,50 @@ def test_stabilization_analysis_matches_concat_encode(tmp_path, monkeypatch):
     assert not render.call_args.args[1].exists()  # private transforms cleaned up
     concat_path = Path(detection[detection.index("-i") + 1])
     assert not concat_path.exists()
+
+
+@pytest.mark.parametrize("fps,radius,expected", [
+    (24, 30, 24), (25, 30, 25), (30000 / 1001, 30, 30), (30, 30, 30),
+    (50, 30, 50), (60000 / 1001, 30, 60), (60, 30, 60), (120, 30, 120),
+    (60, 15, 30), (60, 0, 0), (60, 1000, 1000),
+])
+def test_smoothing_preserves_temporal_radius(tmp_path, monkeypatch, fps, radius, expected):
+    render = Mock()
+    monkeypatch.setattr(ffmpeg_utils, "_run_render", render)
+    monkeypatch.setattr(ffmpeg_utils, "get_frame_rate", Mock(return_value=fps))
+    cut_video(tmp_path / "input.mp4", tmp_path / "out.mp4", 5, 7,
+              compress=True, stabilize=True, stabilize_smoothing=radius)
+    encode = render.call_args.args[0]
+    assert f"smoothing={expected}:" in encode[encode.index("-vf") + 1]
+
+
+@pytest.mark.parametrize("average,nominal,expected", [
+    ("60/1", "120/1", 60), ("60000/1001", "60/1", 60000 / 1001),
+    ("0/0", "30000/1001", 30000 / 1001), ("0/1", "25/1", 25),
+])
+def test_frame_rate_probe(tmp_path, monkeypatch, average, nominal, expected):
+    result = subprocess.CompletedProcess([], 0, stdout=json.dumps({"streams": [
+        {"avg_frame_rate": average, "r_frame_rate": nominal},
+    ]}))
+    monkeypatch.setattr(ffmpeg_utils.subprocess, "run", Mock(return_value=result))
+    assert ffmpeg_utils.get_frame_rate(tmp_path / "input.mp4") == pytest.approx(expected)
+
+
+def test_frame_rate_probe_rejects_missing_rate(tmp_path, monkeypatch):
+    result = subprocess.CompletedProcess([], 0, stdout='{"streams": [{"avg_frame_rate": "0/0"}]}')
+    monkeypatch.setattr(ffmpeg_utils.subprocess, "run", Mock(return_value=result))
+    with pytest.raises(RuntimeError, match="Cannot determine video frame rate"):
+        ffmpeg_utils.get_frame_rate(tmp_path / "input.mp4")
+
+
+def test_concat_probes_rate_of_file_at_clip_start(tmp_path, monkeypatch):
+    paths = [tmp_path / "a.mp4", tmp_path / "b.mp4"]
+    monkeypatch.setattr(ffmpeg_utils, "get_duration", Mock(return_value=60.0))
+    probe = Mock(return_value=60)
+    monkeypatch.setattr(ffmpeg_utils, "get_frame_rate", probe)
+    monkeypatch.setattr(ffmpeg_utils, "_run_render", Mock())
+    concat_and_cut(paths, tmp_path / "out.mp4", 60, 70, compress=True, stabilize=True)
+    probe.assert_called_once_with(paths[1])
 
 
 def test_concat_list_declares_all_durations(tmp_path, monkeypatch):
@@ -161,6 +212,19 @@ def ffmpeg_sources(tmp_path_factory):
     return paths
 
 
+@pytest.fixture(scope="module")
+def ffmpeg_sources_by_rate(ffmpeg_sources, tmp_path_factory):
+    folder = tmp_path_factory.mktemp("30fps sources")
+    sources_30 = [folder / path.name for path in ffmpeg_sources]
+    for source, output in zip(ffmpeg_sources, sources_30):
+        subprocess.run([
+            "ffmpeg", "-v", "error", "-y", "-i", str(source), "-vf", "fps=30",
+            "-c:v", "libx264", "-preset", "ultrafast", "-bf", "2", "-g", "60",
+            "-c:a", "copy", str(output),
+        ], check=True, capture_output=True, text=True)
+    return {30: sources_30, 60: ffmpeg_sources}
+
+
 @pytest.mark.ffmpeg
 @pytest.mark.parametrize("mode", ["compressed", "combined", "stabilized", "silent_portrait"])
 def test_real_ffmpeg_output(ffmpeg_sources, tmp_path, mode):
@@ -219,6 +283,7 @@ def _assert_timing(path, duration, pulses):
     data = _probe(path)
     video, audio = [next(s for s in data["streams"] if s["codec_type"] == kind)
                     for kind in ["video", "audio"]]
+    assert video["avg_frame_rate"] == "30/1"
     for stream in [video, audio]:
         assert float(stream["start_time"]) == pytest.approx(0, abs=1 / 30)
         assert float(stream["duration"]) == pytest.approx(duration, abs=1 / 30)
@@ -249,9 +314,11 @@ def _assert_timing(path, duration, pulses):
 
 
 @pytest.mark.ffmpeg
+@pytest.mark.parametrize("source_rate", [30, 60])
 @pytest.mark.parametrize("stabilize", [False, True])
 @pytest.mark.parametrize("selection", ["single", "cross_file", "later_file"])
-def test_seek_preserves_content_and_av_sync(ffmpeg_sources, tmp_path, selection, stabilize):
+def test_seek_preserves_content_and_av_sync(ffmpeg_sources_by_rate, tmp_path, selection, stabilize, source_rate):
+    ffmpeg_sources = ffmpeg_sources_by_rate[source_rate]
     output = tmp_path / "timed.mp4"
     options = dict(compress=True, stabilize=stabilize, stabilize_smoothing=5)
     if selection == "single":
@@ -273,6 +340,56 @@ def test_seek_preserves_content_and_av_sync(ffmpeg_sources, tmp_path, selection,
         concat_and_cut(ffmpeg_sources, output, 5.217, 6.717, **options)
         duration, pulses = 1.5, [5.5 - 5.217, 6.5 - 5.217]
     _assert_timing(output, duration, pulses)
+
+
+@pytest.mark.ffmpeg
+@pytest.mark.parametrize("source_rate", [30, 60])
+@pytest.mark.parametrize("large_source", [False, True])
+def test_stabilization_passes_receive_identical_original_frames(
+    ffmpeg_sources_by_rate, tmp_path, monkeypatch, source_rate, large_source,
+):
+    records = {}
+    commands = {}
+
+    def inspect_pass(cmd, cwd):
+        cmd = cmd.copy()
+        index = cmd.index("-vf") + 1
+        stage = "vidstabdetect" if "vidstabdetect" in cmd[index] else "vidstabtransform"
+        commands[stage] = cmd[index]
+        # Inspect frames immediately before either stabilization filter. showinfo
+        # does not change frames; PTS and checksums prove order and pixel identity.
+        cmd[index] = cmd[index].replace(stage, "showinfo," + stage)
+        result = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True)
+        assert result.returncode == 0, result.stderr
+        records[stage] = re.findall(
+            r"n:\s*(\d+)\s+pts:\s*(-?\d+)\s+pts_time:.*?s:(\d+x\d+).*?checksum:([0-9A-F]+)",
+            result.stderr,
+        )
+
+    monkeypatch.setattr(ffmpeg_utils, "_run_render", inspect_pass)
+    output = tmp_path / "original-rate.mp4"
+    if large_source:
+        source = tmp_path / "large-444.mp4"
+        subprocess.run([
+            "ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i",
+            f"testsrc=size=2560x1440:rate={source_rate},format=yuv444p",
+            "-t", "1", "-c:v", "libx264", "-preset", "ultrafast", str(source),
+        ], check=True, capture_output=True, text=True)
+        cut_video(source, output, 0.2, 0.7, compress=True, stabilize=True)
+        duration, dimensions = 0.5, "1920x1080"
+    else:
+        concat_and_cut(ffmpeg_sources_by_rate[source_rate], output, 3, 6,
+                       compress=True, stabilize=True)
+        duration, dimensions = 3, "320x180"
+    assert records["vidstabdetect"] == records["vidstabtransform"]
+    assert len(records["vidstabdetect"]) == round(duration * source_rate)
+    assert all(frame[2] == dimensions for frame in records["vidstabdetect"])
+    assert "fps=" not in commands["vidstabdetect"]
+    assert commands["vidstabtransform"].endswith(",fps=30")
+    assert f"smoothing={source_rate}:" in commands["vidstabtransform"]
+    video = next(s for s in _probe(output)["streams"] if s["codec_type"] == "video")
+    assert video["avg_frame_rate"] == "30/1"
+    assert video["codec_name"] == "hevc"
 
 
 @pytest.mark.ffmpeg
