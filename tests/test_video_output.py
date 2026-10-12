@@ -141,10 +141,10 @@ def test_cli_passes_profile_and_overrides_fast_cut(tmp_path, monkeypatch):
     config = batch.call_args.args[2]
     assert config.compress and config.stabilize and config.accurate_cut
     assert config.compress_crf == 28 and config.stabilize_smoothing == 15
-    check.assert_called_once_with(compress=True, stabilize=True)
+    check.assert_called_once_with(compress=True, stabilize=True, gpu_encode=False)
 
 
-@pytest.mark.parametrize("option,value", [("--compress-crf", "52"), ("--stabilize-smoothing", "-1")])
+@pytest.mark.parametrize("option,value", [("--compress-crf", "52"), ("--stabilize-smoothing", "-1"), ("--gpu-cq", "0"), ("--gpu-cq", "52")])
 def test_cli_rejects_invalid_profile_values(tmp_path, option, value):
     result = CliRunner().invoke(cli.app, [str(tmp_path), str(tmp_path / "out"), option, value])
     assert result.exit_code == 2
@@ -157,7 +157,7 @@ def test_cli_dry_run_skips_feature_checks(tmp_path, monkeypatch):
     monkeypatch.setattr(cli, "run_batch", Mock(return_value=[]))
     monkeypatch.setattr(cli, "write_manifest", Mock())
     result = CliRunner().invoke(cli.app, [str(tmp_path), str(tmp_path / "out"),
-                                         "--compress", "--stabilize", "--dry-run"])
+                                         "--compress", "--stabilize", "--gpu-encode", "--dry-run"])
     assert result.exit_code == 0, result.output
     check.assert_not_called()
 
@@ -170,7 +170,8 @@ def test_missing_features_fail_with_actionable_error(monkeypatch):
 
 
 @pytest.mark.parametrize("cross_file", [False, True])
-def test_pipeline_passes_output_options(tmp_path, monkeypatch, cross_file):
+@pytest.mark.parametrize("gpu_encode", [False, True])
+def test_pipeline_passes_output_options(tmp_path, monkeypatch, cross_file, gpu_encode):
     files = [pipeline.FileInfo(
         path=tmp_path / f"source{i}.mp4", wav_path=tmp_path / f"source{i}.wav",
         duration=60, creation_epoch=1000 + 60 * i,
@@ -181,12 +182,79 @@ def test_pipeline_passes_output_options(tmp_path, monkeypatch, cross_file):
     monkeypatch.setattr(pipeline, "concat_and_cut" if cross_file else "cut_clip", cut)
     monkeypatch.setattr(pipeline, "_save_stage_debug", Mock())
     config = pipeline.ProcessingConfig(start_padding=0, end_padding=0, compress=True,
-                                       compress_crf=28, stabilize=True, stabilize_smoothing=15)
+                                       compress_crf=28, stabilize=True, stabilize_smoothing=15,
+                                       gpu_encode=gpu_encode, gpu_cq=29)
     rows = pipeline._cut_stages([stage], files, tmp_path / "out", config, tmp_path)
     assert rows[0].status == "ok"
     assert cut.call_args.kwargs["compress"] and cut.call_args.kwargs["stabilize"]
     assert cut.call_args.kwargs["compress_crf"] == 28
     assert cut.call_args.kwargs["stabilize_smoothing"] == 15
+    assert cut.call_args.kwargs["gpu_encode"] == gpu_encode
+    assert cut.call_args.kwargs["gpu_cq"] == 29
+
+
+def test_gpu_cli_enables_compression_independently_of_whisper(tmp_path, monkeypatch):
+    check, batch = Mock(), Mock(return_value=[])
+    monkeypatch.setattr(cli, "check_ffmpeg_available", Mock())
+    monkeypatch.setattr(cli, "check_ffmpeg_features", check)
+    monkeypatch.setattr(cli, "run_batch", batch)
+    monkeypatch.setattr(cli, "write_manifest", Mock())
+    result = CliRunner().invoke(cli.app, [str(tmp_path), str(tmp_path / "out"),
+                                         "--gpu-encode", "--gpu-cq", "29", "--fast-cut"])
+    assert result.exit_code == 0, result.output
+    config = batch.call_args.args[2]
+    assert config.gpu_encode and config.compress and config.accurate_cut
+    assert config.gpu_cq == 29 and config.device == "cpu"
+    check.assert_called_once_with(compress=True, stabilize=False, gpu_encode=True)
+
+
+@pytest.mark.parametrize("cross_file", [False, True])
+def test_gpu_encoding_options_and_profile(tmp_path, monkeypatch, cross_file):
+    render = Mock()
+    monkeypatch.setattr(ffmpeg_utils, "_run_render", render)
+    monkeypatch.setattr(ffmpeg_utils, "get_duration", Mock(return_value=60.0))
+    if cross_file:
+        concat_and_cut([tmp_path / "a.mp4", tmp_path / "b.mp4"], tmp_path / "out.mp4",
+                       55, 65, accurate=False, gpu_encode=True, gpu_cq=29)
+    else:
+        cut_video(tmp_path / "a.mp4", tmp_path / "out.mp4", 5, 15,
+                  accurate=False, gpu_encode=True, gpu_cq=29)
+    render.assert_called_once()
+    cmd = render.call_args.args[0]
+    for option, expected in [("-c:v", "hevc_nvenc"), ("-preset", "p7"), ("-tune", "hq"),
+                             ("-rc", "vbr"), ("-cq", "29"), ("-b:v", "0"),
+                             ("-multipass", "fullres"), ("-rc-lookahead", "32"),
+                             ("-spatial-aq", "1"), ("-bf", "0"),
+                             ("-c:a", "aac"), ("-b:a", "96k")]:
+        assert cmd[cmd.index(option) + 1] == expected
+    assert "fps=30" in cmd[cmd.index("-vf") + 1]
+    assert not {"-crf", "-temporal-aq", "-fs"}.intersection(cmd)
+
+
+@pytest.mark.parametrize("runtime_ok", [False, True])
+def test_gpu_preflight_checks_actual_encoder(tmp_path, monkeypatch, runtime_ok):
+    # A GPU-only build needs NVENC/AAC, not libx265; the listed encoder must
+    # still be tested against a real device before transcription.
+    listing = subprocess.CompletedProcess([], 0, stdout=" V..... hevc_nvenc HEVC\n A..... aac AAC\n")
+    encoding = subprocess.CompletedProcess([], 0 if runtime_ok else 1, stderr="driver unavailable")
+    run = Mock(side_effect=[listing, encoding])
+    monkeypatch.setattr(ffmpeg_utils.subprocess, "run", run)
+    if runtime_ok:
+        ffmpeg_utils.check_ffmpeg_features(gpu_encode=True)
+    else:
+        with pytest.raises(ffmpeg_utils.FFmpegFeatureError, match="driver unavailable"):
+            ffmpeg_utils.check_ffmpeg_features(gpu_encode=True)
+    assert "hevc_nvenc" in run.call_args.args[0]
+    assert run.call_args.kwargs["timeout"] == 15
+
+
+def test_gpu_preflight_timeout(monkeypatch):
+    listing = subprocess.CompletedProcess([], 0, stdout=" V..... hevc_nvenc HEVC\n A..... aac AAC\n")
+    monkeypatch.setattr(ffmpeg_utils.subprocess, "run", Mock(side_effect=[
+        listing, subprocess.TimeoutExpired("ffmpeg", 15),
+    ]))
+    with pytest.raises(ffmpeg_utils.FFmpegFeatureError, match="timed out"):
+        ffmpeg_utils.check_ffmpeg_features(gpu_encode=True)
 
 
 @pytest.fixture(scope="module")
@@ -451,3 +519,59 @@ def test_long_offset_120_to_180(ffmpeg_sources, tmp_path):
     output = tmp_path / "minute.mp4"
     concat_and_cut(paths, output, 120, 180, compress=True)
     _assert_timing(output, 60, [0.5, 40.5])
+
+
+@pytest.fixture(scope="module")
+def nvenc_available(ffmpeg_sources):
+    try:
+        ffmpeg_utils.check_ffmpeg_features(gpu_encode=True)
+    except ffmpeg_utils.FFmpegFeatureError as exc:
+        pytest.skip(str(exc))
+
+
+@pytest.mark.ffmpeg
+@pytest.mark.parametrize("stabilize", [False, True])
+@pytest.mark.parametrize("mode", ["single", "concat", "silent", "large"])
+def test_real_nvenc_output(nvenc_available, ffmpeg_sources, tmp_path, mode, stabilize):
+    output = tmp_path / "gpu.mp4"
+    options = dict(gpu_encode=True, stabilize=stabilize, stabilize_smoothing=5)
+    if mode == "single":
+        cut_video(ffmpeg_sources[0], output, 2.217, 3.717, **options)
+        duration, dimensions = 1.5, (320, 180)
+        _assert_timing(output, duration, [2.5 - 2.217, 3.5 - 2.217])
+    elif mode == "concat":
+        concat_and_cut(ffmpeg_sources, output, 3, 6, **options)
+        duration, dimensions = 3, (320, 180)
+        _assert_timing(output, duration, [0.5, 2.5])
+    elif mode == "silent":
+        source = tmp_path / "silent.mp4"
+        subprocess.run([
+            "ffmpeg", "-v", "error", "-y", "-i", str(ffmpeg_sources[0]),
+            "-an", "-c:v", "copy", str(source),
+        ], check=True, capture_output=True, text=True)
+        concat_and_cut([source, source], output, 3.5, 4.5, **options)
+        duration, dimensions = 1, (320, 180)
+    else:
+        source = tmp_path / "large.mp4"
+        subprocess.run([
+            "ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i",
+            "testsrc=size=2560x1440:rate=60,format=yuv444p", "-t", "1",
+            "-c:v", "libx264", "-preset", "ultrafast", str(source),
+        ], check=True, capture_output=True, text=True)
+        cut_video(source, output, 0.2, 0.7, **options)
+        duration, dimensions = 0.5, (1920, 1080)
+    data = _probe(output)
+    video = next(s for s in data["streams"] if s["codec_type"] == "video")
+    assert video["codec_name"] == "hevc"
+    assert video["codec_tag_string"] == "hvc1"
+    assert video["avg_frame_rate"] == "30/1"
+    assert video["pix_fmt"] == "yuv420p"
+    assert (video["width"], video["height"]) == dimensions
+    assert float(video["duration"]) == pytest.approx(duration, abs=1 / 30)
+    audio = [s for s in data["streams"] if s["codec_type"] == "audio"]
+    if mode in {"silent", "large"}:
+        assert not audio
+    else:
+        assert audio[0]["codec_name"] == "aac"
+    subprocess.run(["ffmpeg", "-v", "error", "-i", str(output), "-f", "null", "-"],
+                   check=True, capture_output=True, text=True)

@@ -155,6 +155,7 @@ python -m video_stage_cutter run "C:\videos" "C:\clips" --model small --device c
 ```powershell
 python -m video_stage_cutter "C:\videos" "C:\clips" --compress
 python -m video_stage_cutter "C:\videos" "C:\clips" --compress --stabilize
+python -m video_stage_cutter "C:\videos" "C:\clips" --device cuda --compress --stabilize --gpu-encode
 ```
 
 `--compress` enables this ffmpeg output profile:
@@ -165,6 +166,16 @@ python -m video_stage_cutter "C:\videos" "C:\clips" --compress --stabilize
 - **MP4** with `hvc1` and `+faststart` for progressive playback.
 
 Compression uses constant quality, with **no file size or bitrate target**. Around 20–30 MB per minute is a guide (roughly 2.6–3.9 Mbit/s of video plus AAC), not a guarantee; movement, noise, detail and resolution affect the result. CRF 26 is retained as a starting point for the quality/size tradeoff, rather than imposing a bitrate cap on fast motion. Ten-minute clips keep the same quality settings and can be much larger. Tune quality/size with `--compress-crf 28` for smaller files or `--compress-crf 23` for better quality. The `slow` preset takes more encoding time.
+
+`--gpu-encode` selects NVIDIA `hevc_nvenc` and implies `--compress`. It retains the same resolution, 30 FPS, AAC 96k, MP4 and stabilization settings. The GPU profile uses preset `p7`, tuning `hq`, VBR with target quality **CQ 26** and no bitrate target (`-b:v 0`), full-resolution multipass, lookahead 32 and spatial AQ. HEVC B-frames and temporal AQ are omitted for compatibility with GTX 1070/Pascal. Adjust GPU quality with `--gpu-cq 28` for smaller files or a lower value for better quality; CQ is separate from CPU CRF, so their numbers do not guarantee identical quality or size. `--compress-crf` controls the CPU profile only. Encoding uses NVENC; decoding, scaling and vid.stab remain on CPU. `--device cuda` independently selects GPU speech recognition. The requested encoder and a short real NVENC encode are checked before transcription; a missing GPU/driver produces an actionable error. `--dry-run` skips this check and all encoding.
+
+On Windows, if Whisper needs the NVIDIA DLL directories on PATH, run this in the same PowerShell session (using this project's virtual environment):
+
+```powershell
+$env:PATH += ";C:\Users\Ts\beep\uspsa-clip-cutter\.venv\Lib\site-packages\nvidia\cublas\bin"
+$env:PATH += ";C:\Users\Ts\beep\uspsa-clip-cutter\.venv\Lib\site-packages\nvidia\cudnn\bin"
+& "C:\Users\Ts\beep\uspsa-clip-cutter\.venv\Scripts\python.exe" -m video_stage_cutter "E:\cam\oct11" "E:\cam\oct11\crop" --device cuda --compress --stabilize --gpu-encode
+```
 
 `--stabilize` separately enables two-pass image stabilization (`vidstabdetect` then `vidstabtransform`): shakiness 5, accuracy 15, fixed 5% zoom (`optzoom=0:zoom=5`), and bicubic interpolation. Both passes process the same original frame sequence and resolution; with `--compress`, scaling happens before stabilization and conversion to 30 FPS happens only after `vidstabtransform`. The default smoothing radius is approximately one second on each side: 30 source frames at 30 FPS, 60 at 60 FPS, or the nearest integer for other rates. `--stabilize-smoothing` remains expressed in frames at 30 FPS, so `15` means approximately half a second per side. A zero radius stays zero; the scaled radius is capped at vid.stab's limit of 1000 source frames, with a warning. Source FPS uses the first video stream's average frame rate, falling back to its nominal rate. For variable-rate footage the temporal window is approximate; for concatenation it uses the rate of the file containing the clip start, assuming compatible camera chapters at the same rate. A fixed modest zoom prevents isolated large movements from determining the crop for the whole clip. Strong movements can still expose black borders (`crop=black`); the crop does not grow to hide them. Stabilization at the source rate adds processing time. Without `--compress`, stabilization retains the existing H.264/AAC encoding profile and source resolution/frame rate.
 
@@ -232,6 +243,8 @@ In the debug directory (`<output_dir>/debug/` by default, or the path you pass w
 | `--accurate-cut` / `--fast-cut` | `--accurate-cut` | Re-encode for frame-accurate boundaries (slower) or stream-copy (fast, may start on a prior keyframe). |
 | `--compress` | off | Encode up to 1920x1080/30 FPS H.265 slow CRF 26 + AAC 96k without upscaling. Constant quality, no size target; overrides `--fast-cut`. |
 | `--compress-crf` | `26` | Quality for `--compress`, 0–51. Lower = better quality/larger files; higher = smaller files. |
+| `--gpu-encode` | off | Use NVIDIA NVENC HEVC p7/hq. Implies `--compress`; independent of Whisper `--device`. |
+| `--gpu-cq` | `26` | GPU target quality, 1–51. Lower = better quality/larger files; higher = smaller files. Separate from CPU CRF. |
 | `--stabilize` | off | Apply two-pass vid.stab image stabilization; overrides `--fast-cut`. |
 | `--stabilize-smoothing` | `30` | Smoothing radius in 30-FPS-equivalent frames, 0–1000. Scaled to source FPS: default 30 becomes 60 source frames at 60 FPS (~1 second per side). |
 | `--keep-wav` | off | Keep the extracted WAV files in the debug directory instead of deleting them after processing. |

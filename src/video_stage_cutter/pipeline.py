@@ -62,6 +62,8 @@ class ProcessingConfig:
     compress_crf: int = 26
     stabilize: bool = False
     stabilize_smoothing: int = 30
+    gpu_encode: bool = False
+    gpu_cq: int = 26
 
 
 # ---------------------------------------------------------------------------
@@ -1127,6 +1129,8 @@ def _cut_stages(
                     compress_crf=config.compress_crf,
                     stabilize=config.stabilize,
                     stabilize_smoothing=config.stabilize_smoothing,
+                    gpu_encode=config.gpu_encode,
+                    gpu_cq=config.gpu_cq,
                 )
             else:
                 source_paths = [files[si].path for si, _, _ in spans]
@@ -1146,6 +1150,8 @@ def _cut_stages(
                     compress_crf=config.compress_crf,
                     stabilize=config.stabilize,
                     stabilize_smoothing=config.stabilize_smoothing,
+                    gpu_encode=config.gpu_encode,
+                    gpu_cq=config.gpu_cq,
                 )
             row.status = "ok"
             row.output_file = str(output_path)

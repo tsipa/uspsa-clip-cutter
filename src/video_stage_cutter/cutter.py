@@ -23,6 +23,8 @@ def cut_clip(
     compress_crf: int = 26,
     stabilize: bool = False,
     stabilize_smoothing: int = 30,
+    gpu_encode: bool = False,
+    gpu_cq: int = 26,
 ) -> Path:
     """Validate boundaries and cut a clip.
 
@@ -46,10 +48,11 @@ def cut_clip(
     log.info(
         "Cutting clip: %.2f–%.2f s (%.1f s) → %s [%s]",
         start, end, duration, output_path.name,
-        "accurate" if accurate or compress or stabilize else "fast",
+        "accurate" if accurate or compress or stabilize or gpu_encode else "fast",
     )
     return cut_video(
         video_path, output_path, start, end, accurate=accurate,
         compress=compress, compress_crf=compress_crf,
         stabilize=stabilize, stabilize_smoothing=stabilize_smoothing,
+        gpu_encode=gpu_encode, gpu_cq=gpu_cq,
     )

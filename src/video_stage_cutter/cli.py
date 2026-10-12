@@ -32,7 +32,9 @@ def run(
     compute_type: str = typer.Option("int8", help="Compute type (int8, float16, float32)."),
     accurate_cut: bool = typer.Option(True, "--accurate-cut/--fast-cut", help="Re-encode for frame-accurate cuts, or stream-copy for speed."),
     compress: bool = typer.Option(False, "--compress", help="Compress to at most 1080p/30fps HEVC slow CRF 26 + AAC 96k, without upscaling. Overrides --fast-cut."),
-    compress_crf: int = typer.Option(26, min=0, max=51, help="HEVC quality for --compress: lower = better quality/larger files, higher = smaller files."),
+    compress_crf: int = typer.Option(26, min=0, max=51, help="CPU HEVC quality for --compress: lower = better quality/larger files, higher = smaller files."),
+    gpu_encode: bool = typer.Option(False, "--gpu-encode", help="Encode HEVC on NVIDIA NVENC (p7/hq). Implies --compress; independent of Whisper --device."),
+    gpu_cq: int = typer.Option(26, min=1, max=51, help="NVENC quality for --gpu-encode: lower = better/larger. Separate from CPU --compress-crf."),
     stabilize: bool = typer.Option(False, "--stabilize", help="Apply two-pass vid.stab image stabilization. Overrides --fast-cut."),
     stabilize_smoothing: int = typer.Option(30, min=0, max=1000, help="Stabilization radius in 30-fps-equivalent frames; scaled to source FPS (30 means ~1 second per side)."),
     keep_wav: bool = typer.Option(False, help="Keep extracted WAV files in the debug directory."),
@@ -57,10 +59,11 @@ def run(
         datefmt="%H:%M:%S",
     )
 
+    compress = compress or gpu_encode
     try:
         check_ffmpeg_available()
         if not dry_run:
-            check_ffmpeg_features(compress=compress, stabilize=stabilize)
+            check_ffmpeg_features(compress=compress, stabilize=stabilize, gpu_encode=gpu_encode)
     except (FFmpegNotFoundError, FFmpegFeatureError) as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(code=1) from exc
@@ -82,6 +85,8 @@ def run(
         compress_crf=compress_crf,
         stabilize=stabilize,
         stabilize_smoothing=stabilize_smoothing,
+        gpu_encode=gpu_encode,
+        gpu_cq=gpu_cq,
         keep_wav=keep_wav,
         debug_dir=debug_dir,
         start_padding=start_padding,

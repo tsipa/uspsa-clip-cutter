@@ -22,11 +22,23 @@ class FFmpegFeatureError(RuntimeError):
     """Raised when the installed ffmpeg lacks a requested encoder or filter."""
 
 
-def check_ffmpeg_features(*, compress: bool = False, stabilize: bool = False) -> None:
+def _nvenc_options(cq: int) -> list[str]:
+    """Quality-oriented HEVC options supported by Pascal GPUs such as GTX 1070."""
+    return [
+        "-c:v", "hevc_nvenc", "-preset", "p7", "-tune", "hq",
+        "-rc", "vbr", "-cq", str(cq), "-b:v", "0",
+        "-multipass", "fullres", "-rc-lookahead", "32", "-spatial-aq", "1",
+        "-bf", "0",  # Pascal does not support HEVC B-frames or temporal AQ.
+    ]
+
+
+def check_ffmpeg_features(
+    *, compress: bool = False, stabilize: bool = False, gpu_encode: bool = False,
+) -> None:
     """Fail before transcription if optional rendering features are unavailable."""
     requirements = []
-    if compress:
-        requirements.append(("-encoders", {"libx265", "aac"}))
+    if compress or gpu_encode:
+        requirements.append(("-encoders", {"hevc_nvenc" if gpu_encode else "libx265", "aac"}))
     if stabilize:
         requirements.append(("-filters", {"vidstabdetect", "vidstabtransform"}))
     for flag, required in requirements:
@@ -42,7 +54,23 @@ def check_ffmpeg_features(*, compress: bool = False, stabilize: bool = False) ->
             raise FFmpegFeatureError(
                 "Installed ffmpeg does not support the requested output profile. "
                 f"Required features: {', '.join(sorted(required))}. "
-                "Install a full ffmpeg build with libx265, AAC and libvidstab."
+                "Install a full ffmpeg build with the required features."
+            )
+    if gpu_encode:
+        # An encoder listed by ffmpeg may still lack a working GPU or driver.
+        # Test the actual profile before starting expensive transcription.
+        try:
+            result = subprocess.run([
+                "ffmpeg", "-hide_banner", "-loglevel", "error",
+                "-f", "lavfi", "-i", "testsrc2=s=128x128:r=30", "-t", "0.2",
+                *_nvenc_options(26), "-pix_fmt", "yuv420p", "-an", "-f", "null", "-",
+            ], capture_output=True, text=True, timeout=15)
+        except subprocess.TimeoutExpired as exc:
+            raise FFmpegFeatureError("NVENC GPU check timed out; check the NVIDIA driver") from exc
+        if result.returncode != 0:
+            raise FFmpegFeatureError(
+                "NVENC GPU encoding is unavailable. Check the NVIDIA GPU/driver, "
+                f"or run without --gpu-encode.\n{result.stderr}"
             )
 
 
@@ -64,6 +92,8 @@ def _render_processed_clip(
     stabilize_smoothing: int,
     start: float = 0.0,
     source_fps: float = 30.0,
+    gpu_encode: bool = False,
+    gpu_cq: int = 26,
 ) -> Path:
     """Render with optional constant-quality HEVC and vid.stab stabilization.
 
@@ -76,6 +106,9 @@ def _render_processed_clip(
         raise ValueError("Clip start must be nonnegative and finite")
     if not 0 <= compress_crf <= 51:
         raise ValueError("Compression CRF must be between 0 and 51")
+    if not 1 <= gpu_cq <= 51:
+        raise ValueError("GPU quality CQ must be between 1 and 51")
+    compress = compress or gpu_encode
     if not 0 <= stabilize_smoothing <= 1000:
         raise ValueError("Stabilization smoothing must be between 0 and 1000 frames")
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -92,9 +125,9 @@ def _render_processed_clip(
             # stabilization passes see different scaled pixel data.
             filters.append("format=yuv420p")
         log.info(
-            "Compression: up to 1920x1080 / 30 fps, HEVC slow CRF %d, "
+            "Compression: up to 1920x1080 / 30 fps, HEVC %s, "
             "AAC 96 kbit/s; constant quality, no file size limit (%.1fs)",
-            compress_crf, duration,
+            f"NVENC p7 CQ {gpu_cq}" if gpu_encode else f"slow CRF {compress_crf}", duration,
         )
 
     with tempfile.TemporaryDirectory(prefix="clip_render_") as tmp:
@@ -131,10 +164,10 @@ def _render_processed_clip(
                 filters.append("fps=30")
         video_args = ["-vf", ",".join(filters)] if filters else []
         if compress:
-            video_args += [
+            video_args += _nvenc_options(gpu_cq) if gpu_encode else [
                 "-c:v", "libx265", "-preset", "slow", "-crf", str(compress_crf),
-                "-pix_fmt", "yuv420p", "-tag:v", "hvc1",
             ]
+            video_args += ["-pix_fmt", "yuv420p", "-tag:v", "hvc1"]
             audio_args = [
                 "-c:a", "aac", "-b:a", "96k",
                 "-ar", "48000", "-ac", "2",
@@ -191,6 +224,8 @@ def cut_video(
     compress_crf: int = 26,
     stabilize: bool = False,
     stabilize_smoothing: int = 30,
+    gpu_encode: bool = False,
+    gpu_cq: int = 26,
 ) -> Path:
     """Cut a segment from *video_path* and write to *output_path*.
 
@@ -198,6 +233,7 @@ def cut_video(
     When False, stream-copy is used (fast but may start on a prior keyframe).
     Compression or stabilization always re-encodes, overriding *accurate*.
     """
+    compress = compress or gpu_encode
     if compress or stabilize:
         return _render_processed_clip(
             ["-i", str(video_path.resolve())],
@@ -205,6 +241,7 @@ def cut_video(
             stabilize=stabilize, stabilize_smoothing=stabilize_smoothing,
             start=start,
             source_fps=get_frame_rate(video_path) if stabilize else 30.0,
+            gpu_encode=gpu_encode, gpu_cq=gpu_cq,
         )
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -284,9 +321,12 @@ def concat_and_cut(
     compress_crf: int = 26,
     stabilize: bool = False,
     stabilize_smoothing: int = 30,
+    gpu_encode: bool = False,
+    gpu_cq: int = 26,
 ) -> Path:
     """Concatenate *video_paths* and cut from *start* to *end* on the combined timeline."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
+    compress = compress or gpu_encode
 
     # Explicit durations let the concat demuxer seek straight to the relevant
     # file/keyframe instead of decoding everything before the clip. Probing
@@ -320,6 +360,7 @@ def concat_and_cut(
                 stabilize=stabilize, stabilize_smoothing=stabilize_smoothing,
                 start=start,
                 source_fps=source_fps,
+                gpu_encode=gpu_encode, gpu_cq=gpu_cq,
             )
         if accurate:
             cmd = [
