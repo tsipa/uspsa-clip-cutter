@@ -66,7 +66,7 @@ class ProcessingConfig:
     compress: bool = False
     compress_crf: int = 26
     stabilize: bool = False
-    stabilize_smoothing: int = 30
+    stabilize_smoothing: int = 10
     gpu_encode: bool = False
     gpu_cq: int = 26
     batched: bool = False

@@ -39,7 +39,7 @@ def run(
     gpu_encode: bool = typer.Option(False, "--gpu-encode", help="Encode HEVC on NVIDIA NVENC (p7/hq). Implies --compress; independent of Whisper --device."),
     gpu_cq: int = typer.Option(26, min=1, max=51, help="NVENC quality for --gpu-encode: lower = better/larger. Separate from CPU --compress-crf."),
     stabilize: bool = typer.Option(False, "--stabilize", help="Apply two-pass vid.stab image stabilization. Overrides --fast-cut."),
-    stabilize_smoothing: int = typer.Option(30, min=0, max=1000, help="Stabilization radius in 30-fps-equivalent frames; scaled to source FPS (30 means ~1 second per side)."),
+    stabilize_smoothing: int = typer.Option(10, min=0, max=1000, help="Stabilization radius in source frames (no FPS conversion). Default: static_10 benchmark profile."),
     keep_wav: bool = typer.Option(False, help="Keep extracted WAV files in the debug directory."),
     debug_dir: Path | None = typer.Option(None, help="Directory for debug/transcript files. Defaults to <output_dir>/debug."),
     start_padding: float = typer.Option(10.0, help="Seconds to include before the detected start (beep or 'are you ready')."),

@@ -53,10 +53,10 @@ def test_stabilization_analysis_matches_concat_encode(tmp_path, monkeypatch):
     detection_filters = detection[detection.index("-vf") + 1]
     encode_filters = encode[encode.index("-vf") + 1]
     assert detection_filters.split(",vidstabdetect")[0] == encode_filters.split(",vidstabtransform")[0]
-    assert "smoothing=30:" in encode_filters
+    assert "smoothing=15:" in encode_filters
     assert "fps=" not in detection_filters
     assert encode_filters.endswith(",fps=30")
-    assert "optzoom=1:zoom=5:crop=black" in encode_filters
+    assert "optzoom=1:zoom=0:crop=black" in encode_filters
     assert detection[:detection.index("-map")] == encode[:encode.index("-map")]
     assert detection.index("-ss") < detection.index("-i")
     assert detection[detection.index("-ss") + 1] == "55.000"
@@ -69,19 +69,19 @@ def test_stabilization_analysis_matches_concat_encode(tmp_path, monkeypatch):
     assert not concat_path.exists()
 
 
-@pytest.mark.parametrize("fps,radius,expected", [
-    (24, 30, 24), (25, 30, 25), (30000 / 1001, 30, 30), (30, 30, 30),
-    (50, 30, 50), (60000 / 1001, 30, 60), (60, 30, 60), (120, 30, 120),
-    (60, 15, 30), (60, 0, 0), (60, 1000, 1000),
+@pytest.mark.parametrize("fps,radius", [
+    (24, 10), (25, 10), (30000 / 1001, 10), (30, 10),
+    (50, 10), (60000 / 1001, 10), (60, 10), (120, 10),
+    (60, 15), (60, 0), (60, 1000),
 ])
-def test_smoothing_preserves_temporal_radius(tmp_path, monkeypatch, fps, radius, expected):
+def test_smoothing_uses_literal_source_frames(tmp_path, monkeypatch, fps, radius):
     render = Mock()
     monkeypatch.setattr(ffmpeg_utils, "_run_render", render)
     monkeypatch.setattr(ffmpeg_utils, "get_frame_rate", Mock(return_value=fps))
     cut_video(tmp_path / "input.mp4", tmp_path / "out.mp4", 5, 7,
               compress=True, stabilize=True, stabilize_smoothing=radius)
     encode = render.call_args.args[0]
-    assert f"smoothing={expected}:" in encode[encode.index("-vf") + 1]
+    assert f"smoothing={radius}:" in encode[encode.index("-vf") + 1]
 
 
 @pytest.mark.parametrize("average,nominal,expected", [
@@ -207,6 +207,7 @@ def test_gpu_cli_enables_compression_independently_of_whisper(tmp_path, monkeypa
     config = batch.call_args.args[2]
     assert config.gpu_encode and config.compress and config.accurate_cut
     assert config.gpu_cq == 29 and config.device == "cpu"
+    assert config.stabilize_smoothing == 10
     check.assert_called_once_with(compress=True, stabilize=False, gpu_encode=True)
 
 
@@ -499,7 +500,7 @@ def test_stabilization_passes_receive_identical_original_frames(
     assert all(frame[2] == dimensions for frame in records["vidstabdetect"])
     assert "fps=" not in commands["vidstabdetect"]
     assert commands["vidstabtransform"].endswith(",fps=30")
-    assert f"smoothing={source_rate}:" in commands["vidstabtransform"]
+    assert "smoothing=10:optzoom=1:zoom=0:crop=black:interpol=bicubic" in commands["vidstabtransform"]
     video = next(s for s in _probe(output)["streams"] if s["codec_type"] == "video")
     assert video["avg_frame_rate"] == "30/1"
     assert video["codec_name"] == "hevc"

@@ -143,14 +143,13 @@ def _render_processed_clip(
         if stabilize:
             if not math.isfinite(source_fps) or source_fps <= 0:
                 raise ValueError("Source frame rate must be positive and finite")
-            # The CLI radius is expressed in frames at 30 fps, so 30 means
-            # approximately one second on either side at any source frame rate.
-            smoothing = int(stabilize_smoothing * source_fps / 30 + 0.5)
-            smoothing = max(1 if stabilize_smoothing else 0, smoothing)
-            if smoothing > 1000:
-                log.warning("Source-rate smoothing exceeds vid.stab's limit; clamping to 1000 frames")
-                smoothing = 1000
-            log.info("Stabilization: vid.stab at %.3f fps, smoothing=%d source frames", source_fps, smoothing)
+            # Match the selected static_10 benchmark: a literal source-frame
+            # radius, independent of the final 30 FPS encoding rate.
+            smoothing = stabilize_smoothing
+            log.info(
+                "Stabilization: vid.stab at %.3f fps, smoothing=%d source frames, optzoom=1, zoom=0",
+                source_fps, smoothing,
+            )
             detection = [*filters, "vidstabdetect=shakiness=5:accuracy=15:result=transforms.trf"]
             _run_render([
                 *base, "-map", "0:v:0", "-vf", ",".join(detection),
@@ -158,7 +157,7 @@ def _render_processed_clip(
             ], work_dir)
             filters.append(
                 "vidstabtransform=input=transforms.trf:"
-                f"smoothing={smoothing}:optzoom=1:zoom=5:crop=black:interpol=bicubic"
+                f"smoothing={smoothing}:optzoom=1:zoom=0:crop=black:interpol=bicubic"
             )
             if compress:
                 filters.append("fps=30")
@@ -223,7 +222,7 @@ def cut_video(
     compress: bool = False,
     compress_crf: int = 26,
     stabilize: bool = False,
-    stabilize_smoothing: int = 30,
+    stabilize_smoothing: int = 10,
     gpu_encode: bool = False,
     gpu_cq: int = 26,
 ) -> Path:
@@ -320,7 +319,7 @@ def concat_and_cut(
     compress: bool = False,
     compress_crf: int = 26,
     stabilize: bool = False,
-    stabilize_smoothing: int = 30,
+    stabilize_smoothing: int = 10,
     gpu_encode: bool = False,
     gpu_cq: int = 26,
 ) -> Path:
