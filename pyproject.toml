@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Batch-process action camera videos from USPSA matches: detect stage start beep and end command, cut clips automatically."
 requires-python = ">=3.11"
 dependencies = [
-    "faster-whisper>=1.0.0",
+    "faster-whisper>=1.2.1",
     "numpy>=1.24",
     "scipy>=1.11",
     "rapidfuzz>=3.0",

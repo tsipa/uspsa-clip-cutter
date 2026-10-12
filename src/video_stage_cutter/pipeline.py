@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import wave
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -64,6 +65,8 @@ class ProcessingConfig:
     stabilize_smoothing: int = 30
     gpu_encode: bool = False
     gpu_cq: int = 26
+    batched: bool = False
+    batch_size: int = 2
 
 
 # ---------------------------------------------------------------------------
@@ -1260,6 +1263,17 @@ _WHISPER_PROMPT = (
 )
 
 
+def _batched_clip_timestamps(wav_path: Path) -> list[dict[str, float]]:
+    """Cover the entire WAV with <=30 s chunks, without VAD or time compression."""
+    with wave.open(str(wav_path), "rb") as wav:
+        frame_count, sample_rate = wav.getnframes(), wav.getframerate()
+    chunk_frames = 30 * sample_rate
+    return [
+        {"start": start / sample_rate, "end": min(start + chunk_frames, frame_count) / sample_rate}
+        for start in range(0, frame_count, chunk_frames)
+    ]
+
+
 def _transcribe(
     wav_path: Path,
     config: ProcessingConfig,
@@ -1267,14 +1281,30 @@ def _transcribe(
 ) -> tuple[list[TranscriptSegment], object]:
     from faster_whisper import WhisperModel
 
+    if config.batch_size < 1:
+        raise ValueError("Transcription batch size must be at least 1")
     if cached_model is None:
         log.info("Loading Whisper model '%s' (device=%s, compute_type=%s) ...",
                  config.model, config.device, config.compute_type)
         cached_model = WhisperModel(
             config.model, device=config.device, compute_type=config.compute_type,
         )
+        if config.batched:
+            from faster_whisper import BatchedInferencePipeline
 
-    log.info("  Transcribing %s ...", wav_path.name)
+            cached_model = BatchedInferencePipeline(model=cached_model)
+
+    batch_options = {}
+    if config.batched:
+        batch_options = {
+            "batch_size": config.batch_size,
+            "clip_timestamps": _batched_clip_timestamps(wav_path),
+            "chunk_length": 30,
+            "condition_on_previous_text": False,
+        }
+        log.info("  Transcribing %s in batches of %d (VAD off) ...", wav_path.name, config.batch_size)
+    else:
+        log.info("  Transcribing %s ...", wav_path.name)
     segments_iter, _info = cached_model.transcribe(
         str(wav_path),
         beam_size=5,
@@ -1282,6 +1312,7 @@ def _transcribe(
         language="en",
         initial_prompt=_WHISPER_PROMPT,
         vad_filter=False,
+        **batch_options,
     )
 
     segments: list[TranscriptSegment] = []
@@ -1299,9 +1330,8 @@ def _transcribe(
 
 def _transcribe_worker(args: tuple) -> tuple[int, list[TranscriptSegment]]:
     """Standalone worker for parallel transcription (one per process)."""
-    from faster_whisper import WhisperModel
-
-    file_idx, video_path_str, wav_path_str, debug_dir_str, model_name, device, compute_type, reuse = args
+    (file_idx, video_path_str, wav_path_str, debug_dir_str,
+     model_name, device, compute_type, reuse, batched, batch_size) = args
     video_path = Path(video_path_str)
     wav_path = Path(wav_path_str)
     debug_dir = Path(debug_dir_str)
@@ -1315,21 +1345,11 @@ def _transcribe_worker(args: tuple) -> tuple[int, list[TranscriptSegment]]:
 
     extract_audio(video_path, wav_path)
 
-    wm = WhisperModel(model_name, device=device, compute_type=compute_type)
-    segments_iter, _ = wm.transcribe(
-        str(wav_path), beam_size=5, word_timestamps=True,
-        language="en", initial_prompt=_WHISPER_PROMPT, vad_filter=False,
+    config = ProcessingConfig(
+        model=model_name, device=device, compute_type=compute_type,
+        batched=batched, batch_size=batch_size,
     )
-
-    segments: list[TranscriptSegment] = []
-    for seg in segments_iter:
-        words = [
-            WordInfo(start=w.start, end=w.end, word=w.word, probability=w.probability)
-            for w in (seg.words or [])
-        ]
-        segments.append(TranscriptSegment(
-            start=seg.start, end=seg.end, text=seg.text.strip(), words=words,
-        ))
+    segments, _ = _transcribe(wav_path, config, None)
 
     save_transcript(segments, transcript_path)
     print(f"  [{file_idx}] {video_path.name}: transcribed {len(segments)} segments")
@@ -1403,7 +1423,8 @@ def run_batch(
         from concurrent.futures import ProcessPoolExecutor
         worker_args = [
             (i, str(fi.path), str(fi.wav_path), str(debug_dir),
-             config.model, config.device, config.compute_type, config.reuse_transcripts)
+             config.model, config.device, config.compute_type, config.reuse_transcripts,
+             config.batched, config.batch_size)
             for i, fi in enumerate(files)
         ]
         with ProcessPoolExecutor(max_workers=config.workers) as pool:

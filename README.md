@@ -136,6 +136,18 @@ python -m video_stage_cutter run "C:\videos" "C:\clips" --model medium --device 
 
 This uses the `medium` model on your NVIDIA GPU with float16 precision. It is significantly faster than CPU mode but requires CUDA to be set up on your system. CUDA setup depends on your GPU driver and CUDA toolkit version -- if you get CUDA errors, fall back to CPU mode.
 
+## Batched Transcription
+
+```powershell
+python -m video_stage_cutter "E:\cam\oct11" "E:\cam\oct11\crop" --device cuda --compress --stabilize --gpu-encode --batched --batch-size 2
+```
+
+`--batched` (alias `--batched-transcription`) opts into faster-whisper's `BatchedInferencePipeline`. `--batch-size` defaults to **2** and controls the number of audio chunks decoded together, not the number of video files or model copies. With the default `--workers 1`, the same model and pipeline are reused across files. The normal sequential transcription mode remains the default; `--batch-size` alone does not enable batching.
+
+The full audio is covered by contiguous chunks of at most 30 seconds, with **VAD disabled**, preserving quiet range-officer commands instead of filtering them out before recognition. Segment and word timestamps remain relative to the original recording. The same English language, USPSA prompt, beam size 5 and word timestamps are used. Batched decoding does not carry the previous chunk's recognized text as context, so transcripts may differ, especially for words crossing chunk boundaries. Review detection results on representative footage before relying on a new recognition mode.
+
+Larger batches use more GPU memory and are not guaranteed to be faster. Start at 2 on an 8 GB GTX 1070; reduce to `--batch-size 1` if necessary. `--workers` remains independent, and multiple workers each load their own model; use one worker when trying batching on a single GPU. `--reuse-transcripts` still bypasses recognition for cached files, irrespective of transcription mode. No encoding, stabilization or compute-type settings are changed by `--batched`.
+
 ## Fast Cut Example
 
 ```
@@ -240,6 +252,8 @@ In the debug directory (`<output_dir>/debug/` by default, or the path you pass w
 | `--model` | `large-v3` | Whisper model name. Options: `tiny`, `base`, `small`, `medium`, `large-v3`. Larger models are more accurate but slower. |
 | `--device` | `cpu` | Device for Whisper inference. Use `cpu` or `cuda` (NVIDIA GPU). |
 | `--compute-type` | `int8` | Numeric precision. `int8` for CPU, `float16` for GPU, `float32` for maximum accuracy. |
+| `--batched` / `--batched-transcription` | off | Recognize audio chunks in batches using `BatchedInferencePipeline`, without VAD. |
+| `--batch-size` | `2` | Audio chunks per inference batch (minimum 1); used with `--batched`. Larger batches require more memory. |
 | `--accurate-cut` / `--fast-cut` | `--accurate-cut` | Re-encode for frame-accurate boundaries (slower) or stream-copy (fast, may start on a prior keyframe). |
 | `--compress` | off | Encode up to 1920x1080/30 FPS H.265 slow CRF 26 + AAC 96k without upscaling. Constant quality, no size target; overrides `--fast-cut`. |
 | `--compress-crf` | `26` | Quality for `--compress`, 0–51. Lower = better quality/larger files; higher = smaller files. |
