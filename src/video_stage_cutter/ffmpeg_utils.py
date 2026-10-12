@@ -25,7 +25,7 @@ def check_ffmpeg_features(*, compress: bool = False, stabilize: bool = False) ->
     """Fail before transcription if optional rendering features are unavailable."""
     requirements = []
     if compress:
-        requirements.append(("-encoders", {"libx265", "libopus"}))
+        requirements.append(("-encoders", {"libx265", "aac"}))
     if stabilize:
         requirements.append(("-filters", {"vidstabdetect", "vidstabtransform"}))
     for flag, required in requirements:
@@ -41,7 +41,7 @@ def check_ffmpeg_features(*, compress: bool = False, stabilize: bool = False) ->
             raise FFmpegFeatureError(
                 "Installed ffmpeg does not support the requested output profile. "
                 f"Required features: {', '.join(sorted(required))}. "
-                "Install a full ffmpeg build with libx265, libopus and libvidstab."
+                "Install a full ffmpeg build with libx265, AAC and libvidstab."
             )
 
 
@@ -61,7 +61,7 @@ def _render_processed_clip(
     compress_crf: int,
     stabilize: bool,
     stabilize_smoothing: int,
-    trim_start: float | None = None,
+    start: float = 0.0,
 ) -> Path:
     """Render with optional constant-quality HEVC and vid.stab stabilization.
 
@@ -70,32 +70,36 @@ def _render_processed_clip(
     """
     if not math.isfinite(duration) or duration <= 0:
         raise ValueError("Clip duration must be positive and finite")
+    if not math.isfinite(start) or start < 0:
+        raise ValueError("Clip start must be nonnegative and finite")
     if not 0 <= compress_crf <= 51:
         raise ValueError("Compression CRF must be between 0 and 51")
     if not 0 <= stabilize_smoothing <= 1000:
         raise ValueError("Stabilization smoothing must be between 0 and 1000 frames")
     output_path.parent.mkdir(parents=True, exist_ok=True)
     filters = []
-    # The concat demuxer cannot reliably seek. Trim before motion analysis so
-    # analysis and encoding see exactly the same frames on the combined timeline.
-    if trim_start is not None:
-        filters += [f"trim=start={trim_start:.3f}:duration={duration:.3f}", "setpts=PTS-STARTPTS"]
     if compress:
         filters += [
             "fps=30",
-            "scale=1920:1080:force_original_aspect_ratio=decrease:force_divisible_by=2",
-            "pad=1920:1080:(ow-iw)/2:(oh-ih)/2",
-            "setsar=1",
+            "scale=w='min(iw,1920)':h='min(ih,1080)':"
+            "force_original_aspect_ratio=decrease:force_divisible_by=2",
         ]
         log.info(
-            "Compression: 1920x1080 / 30 fps, HEVC slow CRF %d, "
-            "Opus 64 kbit/s; constant quality, no file size limit (%.1fs)",
+            "Compression: up to 1920x1080 / 30 fps, HEVC slow CRF %d, "
+            "AAC 96 kbit/s; constant quality, no file size limit (%.1fs)",
             compress_crf, duration,
         )
 
     with tempfile.TemporaryDirectory(prefix="clip_render_") as tmp:
         work_dir = Path(tmp)
-        base = ["ffmpeg", "-y", *input_args, "-t", f"{duration:.3f}"]
+        # Input -ss seeks to a nearby keyframe; default accurate seeking discards
+        # preroll before either filter pass. Input -t bounds demuxing after that
+        # seek, and output -t caps encoded duration. Keep timestamps on the same
+        # origin for audio and video instead of resetting each stream separately.
+        base = [
+            "ffmpeg", "-y", "-ss", f"{start:.3f}", "-t", f"{duration:.3f}",
+            *input_args, "-t", f"{duration:.3f}",
+        ]
         if stabilize:
             log.info("Stabilization: vid.stab, smoothing=%d frames", stabilize_smoothing)
             detection = [*filters, "vidstabdetect=shakiness=5:accuracy=15:result=transforms.trf"]
@@ -105,7 +109,7 @@ def _render_processed_clip(
             ], work_dir)
             filters.append(
                 "vidstabtransform=input=transforms.trf:"
-                f"smoothing={stabilize_smoothing}:optzoom=1:interpol=bicubic"
+                f"smoothing={stabilize_smoothing}:optzoom=0:zoom=5:crop=black:interpol=bicubic"
             )
         video_args = ["-vf", ",".join(filters)] if filters else []
         if compress:
@@ -114,17 +118,12 @@ def _render_processed_clip(
                 "-pix_fmt", "yuv420p", "-tag:v", "hvc1",
             ]
             audio_args = [
-                "-c:a", "libopus", "-b:a", "64k", "-vbr", "on",
-                "-compression_level", "10", "-application", "audio",
+                "-c:a", "aac", "-b:a", "96k",
                 "-ar", "48000", "-ac", "2",
             ]
         else:
             video_args += ["-c:v", "libx264", "-crf", "18", "-preset", "veryfast"]
             audio_args = ["-c:a", "aac", "-b:a", "192k"]
-        if trim_start is not None:
-            audio_args += [
-                "-af", f"atrim=start={trim_start:.3f}:duration={duration:.3f},asetpts=PTS-STARTPTS",
-            ]
         _run_render([
             *base, "-map", "0:v:0", "-map", "0:a:0?", *video_args, *audio_args,
             "-movflags", "+faststart", str(output_path.resolve()),
@@ -183,9 +182,10 @@ def cut_video(
     """
     if compress or stabilize:
         return _render_processed_clip(
-            ["-ss", f"{start:.3f}", "-i", str(video_path.resolve())],
+            ["-i", str(video_path.resolve())],
             output_path, end - start, compress=compress, compress_crf=compress_crf,
             stabilize=stabilize, stabilize_smoothing=stabilize_smoothing,
+            start=start,
         )
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -248,12 +248,18 @@ def concat_and_cut(
     """Concatenate *video_paths* and cut from *start* to *end* on the combined timeline."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
+    # Explicit durations let the concat demuxer seek straight to the relevant
+    # file/keyframe instead of decoding everything before the clip. Probing
+    # first also avoids leaving a temporary list behind if a probe fails.
+    durations = [get_duration(vp) for vp in video_paths] if compress or stabilize else []
     with tempfile.NamedTemporaryFile(
         mode="w", suffix=".txt", delete=False, prefix="concat_", encoding="utf-8",
     ) as f:
-        for vp in video_paths:
+        for i, vp in enumerate(video_paths):
             escaped = vp.resolve().as_posix().replace("'", "'\\''")
             f.write(f"file '{escaped}'\n")
+            if durations:
+                f.write(f"duration {durations[i]:.6f}\n")
         concat_list = Path(f.name)
 
     try:
@@ -262,7 +268,7 @@ def concat_and_cut(
                 ["-f", "concat", "-safe", "0", "-i", str(concat_list.resolve())],
                 output_path, end - start, compress=compress, compress_crf=compress_crf,
                 stabilize=stabilize, stabilize_smoothing=stabilize_smoothing,
-                trim_start=start,
+                start=start,
             )
         if accurate:
             cmd = [

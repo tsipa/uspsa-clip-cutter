@@ -159,16 +159,16 @@ python -m video_stage_cutter "C:\videos" "C:\clips" --compress --stabilize
 
 `--compress` enables this ffmpeg output profile:
 
-- **1920x1080 (1080p), 30 FPS**, preserving the aspect ratio with padding when necessary.
+- **Up to 1920x1080 (1080p), 30 FPS**, preserving the display aspect ratio. Larger sources are downscaled; smaller sources keep their resolution. Dimensions are rounded down to even values for H.265. No padding to a full 1080p canvas is added.
 - **H.265 / HEVC** (`libx265`), **preset `slow`**, **CRF 26**, 8-bit `yuv420p`.
-- **Opus audio**, 64 kbit/s, VBR, maximum encoder complexity (`compression_level=10`), 48 kHz, stereo.
+- **AAC audio**, 96 kbit/s, 48 kHz, stereo, for MP4 compatibility. Sources without audio produce silent video without an added audio stream.
 - **MP4** with `hvc1` and `+faststart` for progressive playback.
 
-Compression uses constant quality, with **no file size or bitrate target**. A minute of footage around 20–30 MB is a rough expectation, not a guarantee; movement, noise and detail affect the result. Ten-minute clips keep the same quality settings and can be much larger. Tune quality/size with `--compress-crf 28` for smaller files or `--compress-crf 23` for better quality. The `slow` preset takes more encoding time. Opus in MP4 requires a player with Opus support.
+Compression uses constant quality, with **no file size or bitrate target**. Around 20–30 MB per minute is a guide (roughly 2.6–3.9 Mbit/s of video plus AAC), not a guarantee; movement, noise, detail and resolution affect the result. CRF 26 is retained as a starting point for the quality/size tradeoff, rather than imposing a bitrate cap on fast motion. Ten-minute clips keep the same quality settings and can be much larger. Tune quality/size with `--compress-crf 28` for smaller files or `--compress-crf 23` for better quality. The `slow` preset takes more encoding time.
 
-`--stabilize` separately enables two-pass image stabilization (`vidstabdetect` then `vidstabtransform`): shakiness 5, accuracy 15, smoothing radius 30 frames, automatic static zoom to hide exposed borders, and bicubic interpolation. Adjust the radius with `--stabilize-smoothing 15`; a higher value smooths more camera movement. Stabilization can crop the edges and adds processing time. Without `--compress`, stabilization retains the existing H.264/AAC encoding profile and source resolution/frame rate.
+`--stabilize` separately enables two-pass image stabilization (`vidstabdetect` then `vidstabtransform`): shakiness 5, accuracy 15, smoothing radius 30 frames, fixed 5% zoom (`optzoom=0:zoom=5`), and bicubic interpolation. A fixed modest zoom prevents isolated large movements from determining the crop for the whole clip. Strong movements can still expose black borders (`crop=black`); the crop does not grow to hide them. Adjust the radius with `--stabilize-smoothing 15`; a higher value smooths more camera movement. Stabilization adds processing time. Both passes use identical seeking, frame rate and scaling. Without `--compress`, stabilization retains the existing H.264/AAC encoding profile and source resolution/frame rate.
 
-Both options force re-encoding even when `--fast-cut` is supplied. They work for single-file clips and stages spanning multiple source files. Use a full ffmpeg build with `libx265`, `libopus`, and (for stabilization) `libvidstab`; required capabilities are checked before transcription. With `--dry-run`, encoding and stabilization are skipped.
+Both options force re-encoding even when `--fast-cut` is supplied. They work for single-file clips and stages spanning multiple source files. For concatenated clips, explicit source durations allow input seeking to the relevant file/keyframe; input and output duration limits bound processing to the selected interval plus decoder preroll. Audio and video share the seek origin. As with the existing concat demuxer, sources must have compatible streams, codecs and time bases. Use a full ffmpeg build with `libx265`, AAC, and (for stabilization) `libvidstab`; required capabilities are checked before transcription. With `--dry-run`, encoding and stabilization are skipped.
 
 ---
 
@@ -230,7 +230,7 @@ In the debug directory (`<output_dir>/debug/` by default, or the path you pass w
 | `--device` | `cpu` | Device for Whisper inference. Use `cpu` or `cuda` (NVIDIA GPU). |
 | `--compute-type` | `int8` | Numeric precision. `int8` for CPU, `float16` for GPU, `float32` for maximum accuracy. |
 | `--accurate-cut` / `--fast-cut` | `--accurate-cut` | Re-encode for frame-accurate boundaries (slower) or stream-copy (fast, may start on a prior keyframe). |
-| `--compress` | off | Encode 1920x1080/30 FPS H.265 slow CRF 26 + Opus 64k. Constant quality, no size target; overrides `--fast-cut`. |
+| `--compress` | off | Encode up to 1920x1080/30 FPS H.265 slow CRF 26 + AAC 96k without upscaling. Constant quality, no size target; overrides `--fast-cut`. |
 | `--compress-crf` | `26` | Quality for `--compress`, 0–51. Lower = better quality/larger files; higher = smaller files. |
 | `--stabilize` | off | Apply two-pass vid.stab image stabilization; overrides `--fast-cut`. |
 | `--stabilize-smoothing` | `30` | Smoothing radius in frames for `--stabilize`, 0–1000. |
